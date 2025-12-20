@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Film production services - Narrative films, documentaries, and artistic projects. Full-service production from concept to delivery by Light & Shadow Media.">
+    
+    <title>Film | Light & Shadow Media</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="assets/images/logos/favicon.svg">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Preconnect to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+    <!-- Film Grain Overlay -->
+    <div class="film-grain"></div>
+    
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+    
+            <div class="nav-wrapper">
+                <!-- Left -->
+                <ul class="nav-links nav-left">
+                    <li><a href="index.html" class="active">Home</a></li>
+                    <li><a href="live-events.html">Live Events</a></li>
+                </ul>
+    
+                <!-- Right -->
+                <ul class="nav-links nav-right">
+                    <li><a href="corporate.html">Corporate</a></li>
+                    <li><a href="film.html">Film</a></li>
+                    
+                </ul>
+            </div>
+    
+            <!-- Center Logo -->
+            <a href="index.html" class="logo">
+                <span class="logo-text">Light <span class="ampersand">&</span> Shadow</span>
+                <span class="logo-tagline">Media Productions</span>
+            </a>
+    
+            <!-- Hamburger -->
+            <div class="menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    
+        <!-- Mobile Menu -->
+        <div class="nav-mobile">
+            <a href="index.html">Home</a>
+            <a href="live-events.html">Live Events</a>
+            <a href="corporate.html">Corporate</a>
+            <a href="film.html">Film</a>
+            <a href="#contact">Contact</a>
+        </div>
+    </nav>
+    
+    
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="container">
+            <span class="section-label">Creative Work</span>
+            <h1>Film</h1>
+            <div class="section-divider"></div>
+            <p>
+                Narrative films, documentaries, and artistic projects. We're passionate about 
+                cinema and committed to bringing visionary stories to life.
+            </p>
+        </div>
+    </header>
+    
+    <!-- Filter Tabs -->
+    <section class="section-padding">
+        <div class="container">
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="all">All Films</button>
+                <button class="filter-tab" data-filter="narrative">Narrative</button>
+                <button class="filter-tab" data-filter="documentary">Documentary</button>
+                <button class="filter-tab" data-filter="short">Short Film</button>
+            </div>
+            
+            <!-- Projects Grid - Loaded from JSON -->
+            <div class="projects-grid" data-source="data/films.json">
+                <!-- Projects will be loaded dynamically -->
+                <div class="loading" style="grid-column: 1 / -1;">
+                    <div class="loading-spinner"></div>
+                    <span>Loading films...</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Services Offered -->
+    <section class="services section-padding" style="background: var(--color-bg-primary);">
+        <div class="container">
+            <div class="section-header fade-in">
+                <span class="section-label">What We Offer</span>
+                <h2 class="section-title">Film Services</h2>
+                <div class="section-divider"></div>
+            </div>
+            
+            <div class="services-grid">
+                <article class="service-card stagger-item">
+                    <div class="service-icon">
+                        <svg viewBox="0 0 80 80">
+                            <path d="M20 25 L20 55 L50 55 L50 25 Z"/>
+                            <path d="M50 30 L65 20 L65 60 L50 50"/>
+                            <circle cx="35" cy="40" r="8"/>
+                            <circle cx="35" cy="40" r="3"/>
+                        </svg>
+                    </div>
+                    <h3>Cinematography</h3>
+                    <p>Award-winning cinematography services for independent and commercial productions. We bring technical expertise and artistic vision to every frame.</p>
+                </article>
+                
+                <article class="service-card stagger-item">
+                    <div class="service-icon">
+                        <svg viewBox="0 0 80 80">
+                            <rect x="10" y="20" width="60" height="40" rx="2"/>
+                            <path d="M20 30 L30 30"/>
+                            <path d="M20 40 L40 40"/>
+                            <path d="M20 50 L35 50"/>
+                            <circle cx="55" cy="40" r="10"/>
+                            <path d="M52 37 L58 40 L52 43 Z"/>
+                        </svg>
+                    </div>
+                    <h3>Documentary</h3>
+                    <p>Compelling documentary storytelling that captures real stories with cinematic quality. From concept development to festival submission.</p>
+                </article>
+                
+                <article class="service-card stagger-item">
+                    <div class="service-icon">
+                        <svg viewBox="0 0 80 80">
+                            <rect x="15" y="15" width="50" height="50" rx="2"/>
+                            <path d="M15 35 L65 35"/>
+                            <path d="M15 55 L65 55"/>
+                            <path d="M35 15 L35 65"/>
+                            <path d="M55 15 L55 65"/>
+                            <circle cx="40" cy="45" r="5"/>
+                        </svg>
+                    </div>
+                    <h3>Full Production</h3>
+                    <p>End-to-end film production services including script development, casting, location management, and post-production.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Awards Section -->
+    <section class="section-padding">
+        <div class="container">
+            <div class="section-header fade-in">
+                <span class="section-label">Recognition</span>
+                <h2 class="section-title">Awards & Selections</h2>
+                <div class="section-divider"></div>
+            </div>
+            
+            <div class="services-grid" style="grid-template-columns: repeat(4, 1fr);">
+                <article class="service-card stagger-item" style="padding: var(--space-md);">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="var(--color-gold)" style="margin-bottom: var(--space-sm);">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                    </svg>
+                    <h3 style="font-size: 1rem;">Singapore Film Festival</h3>
+                    <p style="font-size: 0.85rem; color: var(--color-text-muted);">Best Cinematography 2024</p>
+                </article>
+                
+                <article class="service-card stagger-item" style="padding: var(--space-md);">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="var(--color-gold)" style="margin-bottom: var(--space-sm);">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                    </svg>
+                    <h3 style="font-size: 1rem;">Asian Documentary Festival</h3>
+                    <p style="font-size: 0.85rem; color: var(--color-text-muted);">Official Selection 2024</p>
+                </article>
+                
+                <article class="service-card stagger-item" style="padding: var(--space-md);">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="var(--color-gold)" style="margin-bottom: var(--space-sm);">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                    </svg>
+                    <h3 style="font-size: 1rem;">ASEAN Film Awards</h3>
+                    <p style="font-size: 0.85rem; color: var(--color-text-muted);">Best Short Film 2023</p>
+                </article>
+                
+                <article class="service-card stagger-item" style="padding: var(--space-md);">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="var(--color-gold)" style="margin-bottom: var(--space-sm);">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                    </svg>
+                    <h3 style="font-size: 1rem;">Hong Kong Film Festival</h3>
+                    <p style="font-size: 0.85rem; color: var(--color-text-muted);">Jury Prize 2023</p>
+                </article>
+            </div>
+        </div>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="section-padding" style="text-align: center; background: var(--color-bg-secondary);">
+        <div class="container">
+            <div class="fade-in">
+                <span class="section-label">Have a story to tell?</span>
+                <h2 style="margin-bottom: var(--space-md);">Let's Make Cinema Together</h2>
+                <p style="color: var(--color-text-secondary); max-width: 600px; margin: 0 auto var(--space-lg);">
+                    Whether you're an independent filmmaker seeking collaboration or a studio looking for production partners, we'd love to hear from you.
+                </p>
+                <a href="index.html#contact" class="btn btn-primary">Discuss Your Project</a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <svg class="logo-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="24" cy="24" r="22" stroke="#c9a227" stroke-width="1.5"/>
+                        <circle cx="24" cy="24" r="16" stroke="#f5f5f7" stroke-width="1"/>
+                        <circle cx="24" cy="24" r="8" stroke="#c9a227" stroke-width="1.5"/>
+                    </svg>
+                    <span class="logo-text">Light <span class="ampersand">&</span> Shadow</span>
+                </div>
+                
+                <ul class="footer-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="live-events.html">Live Events</a></li>
+                    <li><a href="corporate.html">Corporate</a></li>
+                    <li><a href="film.html">Film</a></li>
+                    <li><a href="index.html#contact">Contact</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>© 2025 Light & Shadow Media. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Video Modal -->
+    <div class="modal" id="videoModal">
+        <div class="modal-content">
+            <button class="modal-close" aria-label="Close modal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <div class="modal-video"></div>
+            <div class="modal-info">
+                <h3></h3>
+                <p class="modal-meta"></p>
+                <p></p>
+                <div class="modal-awards"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="js/main.js"></script>
+</body>
+</html>

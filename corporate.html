@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Corporate video production services - Brand films, product launches, training videos, and executive communications by Light & Shadow Media.">
+    
+    <title>Corporate Video | Light & Shadow Media</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="assets/images/logos/favicon.svg">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Preconnect to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+    <!-- Film Grain Overlay -->
+    <div class="film-grain"></div>
+    
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+    
+            <div class="nav-wrapper">
+                <!-- Left -->
+                <ul class="nav-links nav-left">
+                    <li><a href="index.html" class="active">Home</a></li>
+                    <li><a href="live-events.html">Live Events</a></li>
+                </ul>
+    
+                <!-- Right -->
+                <ul class="nav-links nav-right">
+                    <li><a href="corporate.html">Corporate</a></li>
+                    <li><a href="film.html">Film</a></li>
+                </ul>
+            </div>
+    
+            <!-- Center Logo -->
+            <a href="index.html" class="logo">
+                <span class="logo-text">Light <span class="ampersand">&</span> Shadow</span>
+                <span class="logo-tagline">Media Productions</span>
+            </a>
+    
+            <!-- Hamburger -->
+            <div class="menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    
+        <!-- Mobile Menu -->
+        <div class="nav-mobile">
+            <a href="index.html">Home</a>
+            <a href="live-events.html">Live Events</a>
+            <a href="corporate.html">Corporate</a>
+            <a href="film.html">Film</a>
+            <a href="#contact">Contact</a>
+        </div>
+    </nav>
+    
+    
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="container">
+            <span class="section-label">Services</span>
+            <h1>Corporate Video</h1>
+            <div class="section-divider"></div>
+            <p>
+                Elevate your brand with compelling visual stories. From brand films to training content, 
+                we create videos that resonate with your audience.
+            </p>
+        </div>
+    </header>
+    
+    <!-- Filter Tabs -->
+    <section class="section-padding">
+        <div class="container">
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="all">All Projects</button>
+                <button class="filter-tab" data-filter="brand">Brand Films</button>
+                <button class="filter-tab" data-filter="product">Product</button>
+                <button class="filter-tab" data-filter="internal">Internal</button>
+            </div>
+            
+            <!-- Projects Grid - Loaded from JSON -->
+            <div class="projects-grid" data-source="data/corporate.json">
+                <!-- Projects will be loaded dynamically -->
+                <div class="loading" style="grid-column: 1 / -1;">
+                    <div class="loading-spinner"></div>
+                    <span>Loading projects...</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Services Offered -->
+    <section class="services section-padding" style="background: var(--color-bg-primary);">
+        <div class="container">
+            <div class="section-header fade-in">
+                <span class="section-label">What We Offer</span>
+                <h2 class="section-title">Corporate Services</h2>
+                <div class="section-divider"></div>
+            </div>
+            
+            <div class="services-grid">
+                <article class="service-card stagger-item">
+                    <div class="service-icon">
+                        <svg viewBox="0 0 80 80">
+                            <rect x="15" y="20" width="50" height="30" rx="3"/>
+                            <path d="M25 35 L35 42 L55 28"/>
+                            <circle cx="28" cy="58" r="5"/>
+                            <circle cx="52" cy="58" r="5"/>
+                            <path d="M33 58 L47 58"/>
+                        </svg>
+                    </div>
+                    <h3>Brand Films</h3>
+                    <p>Cinematic storytelling that captures your brand's essence, values, and vision. Perfect for websites, campaigns, and investor presentations.</p>
+                </article>
+                
+                <article class="service-card stagger-item">
+                    <div class="service-icon">
+                        <svg viewBox="0 0 80 80">
+                            <rect x="25" y="15" width="30" height="50" rx="3"/>
+                            <circle cx="40" cy="55" r="4"/>
+                            <rect x="30" y="22" width="20" height="25"/>
+                            <path d="M35 32 L42 37 L35 42 Z"/>
+                        </svg>
+                    </div>
+                    <h3>Product Videos</h3>
+                    <p>Showcase your products with dynamic visuals, feature highlights, and compelling demonstrations that drive conversions.</p>
+                </article>
+                
+                <article class="service-card stagger-item">
+                    <div class="service-icon">
+                        <svg viewBox="0 0 80 80">
+                            <circle cx="40" cy="28" r="10"/>
+                            <path d="M25 55 Q40 45 55 55"/>
+                            <rect x="20" y="58" width="40" height="5" rx="2"/>
+                            <path d="M35 68 L35 72 L45 72 L45 68"/>
+                        </svg>
+                    </div>
+                    <h3>Executive Communications</h3>
+                    <p>Professional talking head videos, CEO messages, and leadership content that builds trust and connects with stakeholders.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Process Section -->
+    <section class="section-padding">
+        <div class="container">
+            <div class="section-header fade-in">
+                <span class="section-label">How We Work</span>
+                <h2 class="section-title">Our Process</h2>
+                <div class="section-divider"></div>
+            </div>
+            
+            <div class="services-grid" style="grid-template-columns: repeat(4, 1fr);">
+                <article class="service-card stagger-item" style="text-align: left;">
+                    <span class="text-gold" style="font-family: var(--font-display); font-size: 2rem;">01</span>
+                    <h3 style="margin: var(--space-sm) 0;">Discovery</h3>
+                    <p style="font-size: 0.9rem;">We learn about your brand, goals, and audience to develop a strategic approach.</p>
+                </article>
+                
+                <article class="service-card stagger-item" style="text-align: left;">
+                    <span class="text-gold" style="font-family: var(--font-display); font-size: 2rem;">02</span>
+                    <h3 style="margin: var(--space-sm) 0;">Pre-Production</h3>
+                    <p style="font-size: 0.9rem;">Script development, storyboarding, location scouting, and production planning.</p>
+                </article>
+                
+                <article class="service-card stagger-item" style="text-align: left;">
+                    <span class="text-gold" style="font-family: var(--font-display); font-size: 2rem;">03</span>
+                    <h3 style="margin: var(--space-sm) 0;">Production</h3>
+                    <p style="font-size: 0.9rem;">Professional filming with our experienced crew and cinema-grade equipment.</p>
+                </article>
+                
+                <article class="service-card stagger-item" style="text-align: left;">
+                    <span class="text-gold" style="font-family: var(--font-display); font-size: 2rem;">04</span>
+                    <h3 style="margin: var(--space-sm) 0;">Post-Production</h3>
+                    <p style="font-size: 0.9rem;">Editing, color grading, sound design, and motion graphics to polish the final product.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="section-padding" style="text-align: center; background: var(--color-bg-secondary);">
+        <div class="container">
+            <div class="fade-in">
+                <span class="section-label">Ready to elevate your brand?</span>
+                <h2 style="margin-bottom: var(--space-md);">Let's Tell Your Story</h2>
+                <p style="color: var(--color-text-secondary); max-width: 600px; margin: 0 auto var(--space-lg);">
+                    Whether you're launching a new product or refreshing your brand presence, we'll create content that makes an impact.
+                </p>
+                <a href="index.html#contact" class="btn btn-primary">Start a Project</a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <svg class="logo-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="24" cy="24" r="22" stroke="#c9a227" stroke-width="1.5"/>
+                        <circle cx="24" cy="24" r="16" stroke="#f5f5f7" stroke-width="1"/>
+                        <circle cx="24" cy="24" r="8" stroke="#c9a227" stroke-width="1.5"/>
+                    </svg>
+                    <span class="logo-text">Light <span class="ampersand">&</span> Shadow</span>
+                </div>
+                
+                <ul class="footer-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="live-events.html">Live Events</a></li>
+                    <li><a href="corporate.html">Corporate</a></li>
+                    <li><a href="film.html">Film</a></li>
+                    <li><a href="index.html#contact">Contact</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>© 2025 Light & Shadow Media. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Video Modal -->
+    <div class="modal" id="videoModal">
+        <div class="modal-content">
+            <button class="modal-close" aria-label="Close modal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <div class="modal-video"></div>
+            <div class="modal-info">
+                <h3></h3>
+                <p class="modal-meta"></p>
+                <p></p>
+                <div class="modal-awards"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="js/main.js"></script>
+</body>
+</html>

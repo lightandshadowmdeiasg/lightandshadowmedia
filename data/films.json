@@ -1,0 +1,100 @@
+{
+  "films": [
+    {
+      "id": "film-001",
+      "title": "The Last Light",
+      "year": 2024,
+      "role": "Cinematography",
+      "description": "Award-winning short film exploring themes of memory and identity in modern Singapore. A meditation on what we choose to remember and what we allow ourselves to forget.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "awards": ["Best Cinematography — Singapore Film Festival 2024"],
+      "category": "short",
+      "type": "short"
+    },
+    {
+      "id": "film-002",
+      "title": "Echoes of the Sea",
+      "year": 2024,
+      "role": "Director & Cinematography",
+      "description": "Feature documentary exploring the changing relationship between coastal communities and the ocean. Filmed across 5 countries over 18 months.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "awards": ["Official Selection — Asian Documentary Film Festival 2024"],
+      "category": "documentary",
+      "type": "documentary"
+    },
+    {
+      "id": "film-003",
+      "title": "Kopitiam Stories",
+      "year": 2024,
+      "role": "Director",
+      "description": "Narrative short set in a traditional Singaporean coffee shop, weaving together the lives of three generations of hawkers.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "awards": [],
+      "category": "short",
+      "type": "short"
+    },
+    {
+      "id": "film-004",
+      "title": "Silent Frequencies",
+      "year": 2023,
+      "role": "Cinematography",
+      "description": "Experimental narrative exploring communication and isolation in the digital age. Shot entirely on vintage anamorphic lenses.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "awards": ["Jury Prize — Hong Kong Film Festival 2023"],
+      "category": "narrative",
+      "type": "narrative"
+    },
+    {
+      "id": "film-005",
+      "title": "The Craftsmen",
+      "year": 2023,
+      "role": "Director & Cinematography",
+      "description": "Documentary series profiling traditional craftspeople in Southeast Asia. Six episodes covering pottery, weaving, woodcarving, and more.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "awards": ["Best Short Film — ASEAN Film Awards 2023"],
+      "category": "documentary",
+      "type": "documentary"
+    },
+    {
+      "id": "film-006",
+      "title": "Neon Nights",
+      "year": 2023,
+      "role": "Cinematography",
+      "description": "Neo-noir narrative short set in the streets of Singapore's red-light district. A story of redemption and second chances.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "awards": [],
+      "category": "narrative",
+      "type": "narrative"
+    },
+    {
+      "id": "film-007",
+      "title": "Roots",
+      "year": 2022,
+      "role": "Director",
+      "description": "Personal documentary tracing family history through three generations of immigrants. An intimate exploration of diaspora and belonging.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "awards": ["Audience Choice — Singapore Documentary Festival 2022"],
+      "category": "documentary",
+      "type": "documentary"
+    },
+    {
+      "id": "film-008",
+      "title": "Tomorrow's Children",
+      "year": 2022,
+      "role": "Cinematography",
+      "description": "Sci-fi short film set in near-future Singapore, exploring themes of artificial intelligence and human connection.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "awards": [],
+      "category": "narrative",
+      "type": "narrative"
+    }
+  ]
+}

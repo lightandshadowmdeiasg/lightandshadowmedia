@@ -1,0 +1,94 @@
+{
+  "projects": [
+    {
+      "id": "corp-001",
+      "title": "DBS Bank — Brand Story",
+      "client": "DBS Bank",
+      "year": 2024,
+      "description": "A cinematic brand film showcasing DBS's digital transformation journey and commitment to innovation in Southeast Asian banking.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "category": "brand"
+    },
+    {
+      "id": "corp-002",
+      "title": "Grab — Human Stories",
+      "client": "Grab",
+      "year": 2024,
+      "description": "Documentary-style series highlighting the personal stories of Grab driver-partners across Southeast Asia. 6-part series.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "category": "brand"
+    },
+    {
+      "id": "corp-003",
+      "title": "Shopee 11.11 Launch",
+      "client": "Shopee",
+      "year": 2024,
+      "description": "High-energy product launch video with dynamic graphics, celebrity appearances, and rapid-fire deal showcases.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "category": "product"
+    },
+    {
+      "id": "corp-004",
+      "title": "Singapore Airlines — Premium Experience",
+      "client": "Singapore Airlines",
+      "year": 2024,
+      "description": "Luxury brand film highlighting the first-class experience with cinematic visuals and aspirational storytelling.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "category": "brand"
+    },
+    {
+      "id": "corp-005",
+      "title": "CapitaLand — CEO Message",
+      "client": "CapitaLand",
+      "year": 2024,
+      "description": "Annual shareholder address with professional studio setup, teleprompter, and corporate brand integration.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "category": "internal"
+    },
+    {
+      "id": "corp-006",
+      "title": "OCBC — Financial Literacy Series",
+      "client": "OCBC",
+      "year": 2024,
+      "description": "Educational video series on personal finance topics, designed for social media distribution with engaging motion graphics.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "category": "internal"
+    },
+    {
+      "id": "corp-007",
+      "title": "Razer — Gaming Mouse Launch",
+      "client": "Razer",
+      "year": 2023,
+      "description": "Product showcase video with macro photography, dynamic lighting, and technical feature breakdowns for gamers.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "category": "product"
+    },
+    {
+      "id": "corp-008",
+      "title": "Sea Group — Company Culture",
+      "client": "Sea Group",
+      "year": 2023,
+      "description": "Internal recruitment video showcasing company culture, office environment, and employee testimonials.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "category": "internal"
+    },
+    {
+      "id": "corp-009",
+      "title": "Dyson — Air Purifier Demo",
+      "client": "Dyson",
+      "year": 2023,
+      "description": "Product demonstration video with scientific visualizations, clean aesthetics, and feature-focused editing.",
+      "thumbnail": "",
+      "videoUrl": "",
+      "category": "product"
+    }
+  ]
+}
