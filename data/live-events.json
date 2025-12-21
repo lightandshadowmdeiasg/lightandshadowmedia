@@ -1,17 +1,5 @@
 {
   "events": [
-    
-    {
-      "id": "event-002",
-      "title": "Paper Airplane",
-      "date": "2024-11-20",
-      "venue": "Carnival Cinemas",
-      "description": "Movie Premier at Carnival Cinemas",
-      "thumbnail": "/assets/images/liveevents/image.png",
-      "videoUrl": "https://youtu.be/Os_YxsFZ998",
-      "status": "completed",
-      "category": "concert"
-    },
     {
       "id": "event-003",
       "title": "Broken Dreams",
@@ -24,25 +12,14 @@
       "category": "conference"
     },
     {
-      "id": "event-004",
-      "title": "Charity Gala Night 2025",
-      "date": "2025-02-28",
-      "venue": "Raffles Hotel",
-      "description": "Elegant coverage of the annual charity dinner including red carpet interviews, auction highlights, and donor recognition moments.",
-      "thumbnail": "https://assets.vogue.com/photos/598de5ef068a3216afff9d06/master/pass/01-the-greatest-showman-hugh-jackman-vogue-september-issue-2017.jpg",
-      "videoUrl": "",
-      "status": "upcoming",
-      "category": "gala"
-    },
-    {
       "id": "event-008",
-      "title": "E-Sports Championship Finals",
-      "date": "2024-07-22",
-      "venue": "Singapore Indoor Stadium",
-      "description": "High-energy gaming tournament coverage with screen captures, player reactions, and audience engagement moments.",
-      "thumbnail": "",
-      "videoUrl": "",
-      "status": "completed",
+      "title": "L Lun Wah : Beloved Songs For the Fans - Live Band Music Concert",
+      "date": "2026-01-01",
+      "venue": "Carnival Cinema Singapore",
+      "description": "Live Band Music Concert",
+      "thumbnail": "/assets/images/liveevents/llunwah.jpeg",
+      "videoUrl": "https://youtu.be/cUM6m6X3U7Y?list=PLjEWwdmFJaGi_8_HXIS3CjOuGk0q5rK0t",
+      "status": "upcoming",
       "category": "special"
     }
   ]
