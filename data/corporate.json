@@ -2,8 +2,8 @@
   "projects": [
     {
       "id": "corp-001",
-      "title": "DBS Bank — Brand Story",
-      "client": "DBS Bank",
+      "title": "Paper Airplane : Foresaken Stories",
+      "client": "D",
       "year": 2024,
       "description": "A cinematic brand film showcasing DBS's digital transformation journey and commitment to innovation in Southeast Asian banking.",
       "thumbnail": "",
@@ -66,26 +66,6 @@
       "client": "Razer",
       "year": 2023,
       "description": "Product showcase video with macro photography, dynamic lighting, and technical feature breakdowns for gamers.",
-      "thumbnail": "",
-      "videoUrl": "",
-      "category": "product"
-    },
-    {
-      "id": "corp-008",
-      "title": "Sea Group — Company Culture",
-      "client": "Sea Group",
-      "year": 2023,
-      "description": "Internal recruitment video showcasing company culture, office environment, and employee testimonials.",
-      "thumbnail": "",
-      "videoUrl": "",
-      "category": "internal"
-    },
-    {
-      "id": "corp-009",
-      "title": "Dyson — Air Purifier Demo",
-      "client": "Dyson",
-      "year": 2023,
-      "description": "Product demonstration video with scientific visualizations, clean aesthetics, and feature-focused editing.",
       "thumbnail": "",
       "videoUrl": "",
       "category": "product"
