@@ -1172,8 +1172,8 @@ a {
 }
 
 .modal-content {
-    width: 100%;
-    max-width: 1000px;
+    width: 80%;
+    max-width: 800px;
     background: var(--color-bg-card);
     position: relative;
     transform: scale(0.9) translateY(20px);

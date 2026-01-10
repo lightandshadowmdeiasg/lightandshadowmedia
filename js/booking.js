@@ -156,13 +156,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const sections = [];
     
     // Add PREMIUM section if exists
-    if (seatmap.PREMIUM) {
-      sections.push({ name: 'PREMIUM', rows: seatmap.PREMIUM });
-    }
+    // if (seatmap.PREMIUM) {
+    //   sections.push({ name: 'PREMIUM', rows: seatmap.PREMIUM });
+    // }
     
     // Add PLATINUM section if exists
-    if (seatmap.PLATINUM) {
-      sections.push({ name: 'PLATINUM', rows: seatmap.PLATINUM });
+    if (seatmap.SEATPLAN) {
+      sections.push({ name: ' ', rows: seatmap.SEATPLAN });
     }
 
     sections.forEach((section, sectionIndex) => {
@@ -192,61 +192,122 @@ document.addEventListener('DOMContentLoaded', () => {
       seatGrid.appendChild(emptyRow);
 
       // Build each row in the section
-      const rowLetters = Object.keys(section.rows);
-      rowLetters.forEach(rowLetter => {
-        const seatsInRow = section.rows[rowLetter];
-        const tr = document.createElement('tr');
-        tr.align = 'center';
+      // Build each row in the section
+    const rowLetters = Object.keys(section.rows);
 
-        // Row label
-        const labelTd = document.createElement('td');
-        labelTd.textContent = rowLetter;
-        tr.appendChild(labelTd);
+    const COLSPAN = 250; // same as header colSpan (keep consistent)
 
-        // Determine the maximum seat number for this row
-        const maxSeat = Math.max(...seatsInRow);
+    function isLayoutEmpty(layout) {
+      if (!Array.isArray(layout) || layout.length === 0) return true;
 
-        // Create cells for all positions from 1 to maxSeat
-        for (let seatNum = 1; seatNum <= maxSeat; seatNum++) {
-          const td = document.createElement('td');
-          
-          if (seatsInRow.includes(seatNum)) {
-            const seatCode = `${rowLetter}${seatNum}`;
-            
-            const checkboxWrapper = document.createElement('div');
-            checkboxWrapper.className = 'squaredCheckBoxStyle';
+      // empty row = only gaps/aisles
+      return layout.every(cell =>
+        cell === null ||
+        cell === undefined ||
+        cell === '' ||
+        cell === 'AISLE'
+      );
+    }
 
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.name = 'SelectSeatCheckBoxGroup';
-            checkbox.value = seatCode;
-            checkbox.id = seatCode;
+    rowLetters.forEach(rowLetter => {
+      const layout = section.rows[rowLetter]; // array like [1,2,null,'AISLE',5...]
 
-            // Check if seat is booked
-            if (bookedSeats.has(seatCode)) {
-              checkbox.disabled = true;
-            }
+      // ✅ If row is empty, render spacer row WITHOUT label (prevents "C D E" single lines)
+      if (isLayoutEmpty(layout)) {
+        const spacer = document.createElement('tr');
+        spacer.innerHTML = `<td colspan="${COLSPAN}">&nbsp;</td>`;
+        seatGrid.appendChild(spacer);
+        return;
+      }
 
-            const label = document.createElement('label');
-            label.htmlFor = seatCode;
+      const tr = document.createElement('tr');
+      tr.align = 'center';
 
-            checkboxWrapper.appendChild(checkbox);
-            checkboxWrapper.appendChild(label);
-            td.appendChild(checkboxWrapper);
-          } else {
-            // Empty space (aisle)
-            td.innerHTML = '&nbsp;';
-          }
+      // Row label
+      const labelTd = document.createElement('td');
+      labelTd.className = 'row-label';
+      labelTd.textContent = rowLetter;
+      tr.appendChild(labelTd);
 
+      // Render row cells exactly as your layout array
+      layout.forEach(cell => {
+        const td = document.createElement('td');
+
+        // 1) Empty gap
+        if (cell === null || cell === undefined || cell === '') {
+          td.innerHTML = '&nbsp;';
           tr.appendChild(td);
+          return;
         }
 
-        // Add empty cell at the end
-        const endTd = document.createElement('td');
-        tr.appendChild(endTd);
+        // 2) Aisle
+        if (cell === 'AISLE') {
+          td.innerHTML = '&nbsp;';
+          td.style.width = '18px'; // aisle width
+          tr.appendChild(td);
+          return;
+        }
+       // Custom tag objects (TOILET, EXIT, etc.)
+if (typeof cell === 'object' && cell && cell.type) {
+  const td = document.createElement('td');
+  td.className = 'seat-icon-cell';
 
-        seatGrid.appendChild(tr);
+  const label = (cell.label || cell.type).toUpperCase();
+
+  if (cell.type === 'TOILET') {
+    td.innerHTML = `
+      <div class="seat-sign seat-sign--toilet" title="${cell.label || 'Toilet'}">
+        <span class="seat-sign__icon">🚻</span>
+        <span class="seat-sign__text">${label === 'TOILET' ? 'WC' : label}</span>
+      </div>
+    `;
+  } else if (cell.type === 'EXIT') {
+    td.innerHTML = `
+      <div class="seat-sign seat-sign--exit" title="${cell.label || 'Exit'}">
+        <span class="seat-sign__icon">⛔</span>
+        <span class="seat-sign__text">${label}</span>
+      </div>
+    `;
+  } else {
+    td.innerHTML = `
+      <div class="seat-sign" title="${label}">
+        <span class="seat-sign__text">${label}</span>
+      </div>
+    `;
+  }
+
+  tr.appendChild(td);
+  return;
+}
+
+        // 3) Seat
+        const seatNum = String(cell);
+        const seatCode = `${rowLetter}${seatNum}`;
+
+        const checkboxWrapper = document.createElement('div');
+        checkboxWrapper.className = 'squaredCheckBoxStyle';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.name = 'SelectSeatCheckBoxGroup';
+        checkbox.value = seatCode;
+        checkbox.id = seatCode;
+
+        if (bookedSeats.has(seatCode)) checkbox.disabled = true;
+
+        const label = document.createElement('label');
+        label.htmlFor = seatCode;
+
+        checkboxWrapper.appendChild(checkbox);
+        checkboxWrapper.appendChild(label);
+        td.appendChild(checkboxWrapper);
+
+        tr.appendChild(td);
       });
+
+      seatGrid.appendChild(tr);
+    });
+
     });
 
     // Attach event listeners to all checkboxes
