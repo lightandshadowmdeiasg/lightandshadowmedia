@@ -1,6 +1,7 @@
 // ===== CONFIG =====
 const GOOGLE_SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycbwzxnMORDl1OqL4EPjUK5MmdhOkeVd5Z-ia5-WpKuF7zY0rregqZW5VbNeVYfP5rkD0/exec';
+  'https://script.google.com/macros/s/AKfycbwSXWVIF-652S3jYEIn5M8A8hHHhRPtgXuErbQIUM5WJOyFVMK2Ac_hfNAmqSsPr7Vd/exec';
+  
 
 const EVENTS_SOURCE = 'data/live-events.json';
 const SEATMAP_SOURCE = 'data/seatmap.json';
@@ -406,7 +407,7 @@ if (typeof cell === 'object' && cell && cell.type) {
           bookingStatus.style.color = '#c9a227';
         }
         else if (data.success) {
-          bookingStatus.textContent = data.message || 'Booking confirmed!';
+          bookingStatus.textContent = data.message || 'Booking confirm! Kindly Check Your Email for payment.';
           bookingStatus.style.color = '#c9a227';
         }
         else if (data.conflict) {
