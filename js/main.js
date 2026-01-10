@@ -262,10 +262,36 @@ const Modal = {
     
     extractYouTubeId(url) {
         if (!url) return null;
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
-    }
+      
+        try {
+          const parsed = new URL(url);
+      
+          // youtu.be/ID
+          if (parsed.hostname === 'youtu.be') {
+            return parsed.pathname.slice(1);
+          }
+      
+          // youtube.com/watch?v=ID
+          if (parsed.searchParams.has('v')) {
+            return parsed.searchParams.get('v');
+          }
+      
+          // youtube.com/shorts/ID
+          if (parsed.pathname.includes('/shorts/')) {
+            return parsed.pathname.split('/shorts/')[1].split(/[?&]/)[0];
+          }
+      
+        } catch (e) {
+          // fallback regex (for malformed URLs)
+          const match = url.match(
+            /(?:youtube\.com\/(?:shorts\/|watch\?v=)|youtu\.be\/)([A-Za-z0-9_-]{11})/
+          );
+          return match ? match[1] : null;
+        }
+      
+        return null;
+      }
+      
 };
 
 /* ============================================
