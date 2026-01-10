@@ -1,16 +1,6 @@
 {
   "events": [
-    {
-      "id": "event-003",
-      "title": "Broken Dreams",
-      "date": "2024-09-10",
-      "venue": "Suntec Convention Centre",
-      "description": "Technical conference coverage with 6 cameras, presentation capture, and same-day highlight reels for social channels.",
-      "thumbnail": "/assets/images/liveevents/brokendreams.jpg",
-      "videoUrl": "https://youtu.be/45-S4DsYfk4",
-      "status": "completed",
-      "category": "conference"
-    },
+    
     {
       "id": "event-008",
       "title": "L Lun Wah : Beloved Songs For the Fans - Live Band Music Concert",

@@ -131,7 +131,7 @@ a {
 }
 
 .section-padding {
-    padding: 50px 0;
+    padding: 100px 0;
 }
 
 .text-center {
@@ -163,138 +163,141 @@ a {
    NAVIGATION
    ============================================ */
 
-/* ============================================
-   NAVIGATION (DESKTOP)
-   ============================================ */
-
-   .navbar {
+/* NAVBAR SHELL */
+.navbar{
     position: fixed;
-    top: 0; left: 0;
+    top: 0;
+    left: 0;
     width: 100%;
-    padding: 1.2rem 0;
     z-index: 1000;
-    transition: var(--transition-smooth);
+    padding: 0.9rem 0;
     background: transparent;
-}
-
-.navbar.scrolled {
+    transition: var(--transition-smooth);
+  }
+  
+  .navbar.scrolled{
     background: var(--color-bg-overlay);
     backdrop-filter: blur(18px);
     border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-
-.navbar .container {
-    position: relative;
+  }
+  
+  /* CONTAINER → 4 COLUMN GRID (Left | Logo | Right | Burger) */
+  .navbar .container{
     height: 70px;
     display: flex;
-    justify-content: center; /* center LOGO */
     align-items: center;
+    justify-content: space-between;
+    position: relative;
+    padding-inline: clamp(16px, 2vw, 28px);
+  }
+  
+  .nav-left,
+.nav-right{
+  display: flex;
+  align-items: center;
 }
-
-/* LEFT NAV GROUP */
-.nav-left {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-420px); /* adjust spacing */
-    display: flex;
-    gap: 45px;
-}
-
-/* RIGHT NAV GROUP */
-.nav-right {
-    position: absolute;
-    left: 50%;
-    transform: translateX(240px); /* adjust spacing */
-    display: flex;
-    gap: 45px;
-}
-
-/* LOGO CENTER */
-.logo {
+  
+  /* CENTER LOGO */
+  .logo{
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
+    line-height: 1.05;
     cursor: pointer;
-}
-
-.logo-text {
+  }
+  
+  .logo-text{
     display: block;
     font-family: var(--font-display);
     font-size: 1.25rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-}
-
-.logo-text .ampersand { color: var(--color-gold); }
-
-.logo-tagline {
+  }
+  
+  .logo-text .ampersand{
+    color: var(--color-gold);
+  }
+  
+  .logo-tagline{
     display: block;
     font-size: 0.7rem;
     margin-top: 4px;
     letter-spacing: 0.18em;
     color: var(--color-text-secondary);
-}
-
-/* NAV LINKS */
-/* STRONG BUTTON NAV */
-.nav-links a {
+  }
+  
+  /* NAV LINKS */
+  .nav-links{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;                  /* ✅ */
+    gap: clamp(12px, 2vw, 45px);          /* ✅ replaces random spacing */
+  }
+  
+  .nav-links a{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 10px 22px;
     border-radius: 10px;
     border: 1px solid rgba(255,255,255,0.15);
     color: var(--color-text-primary);
-    transition: var(--transition-smooth);
     background: rgba(255,255,255,0.03);
     backdrop-filter: blur(4px);
-}
-
-.nav-links a:hover {
-    color: var(--color-text-primary);
+    transition: var(--transition-smooth);
+    line-height: 1;                       /* ✅ */
+  }
+  
+  /* hover + active keep your style */
+  .nav-links a:hover{
     border-color: var(--color-gold);
     background: rgba(201,162,39,0.15);
-}
-
-.nav-links a.active {
+  }
+  
+  .nav-links a.active{
     background: var(--color-gold);
     color: var(--color-bg-primary);
     border-color: var(--color-gold);
     box-shadow: 0 0 18px rgba(201,162,39,0.5);
-}
-
-.nav-links a::after {
+  }
+  
+  .nav-links a::after{
     display: none !important;
-}
-.nav-links {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-
-/* ============================================
-   MOBILE NAV
-   ============================================ */
-
-.menu-toggle {
-    display: none;
-    position: absolute;
-    right: 20px;
-    top: 18px;
+  }
+  
+  /* ============================================
+     HAMBURGER / MOBILE NAV
+     ============================================ */
+  
+  .menu-toggle{
+    justify-self: end;
+    align-self: center;
+    display: none;                /* desktop hidden */
     flex-direction: column;
     gap: 5px;
     cursor: pointer;
     z-index: 1200;
-}
-
-.menu-toggle span {
+    background: transparent;
+    border: 0;
+    padding: 8px;                 /* easier to tap */
+  }
+  
+  .menu-toggle span{
     width: 28px;
     height: 2px;
     background: var(--color-text-primary);
     transition: var(--transition-fast);
-}
-
-/* Mobile menu container */
-.nav-mobile {
+  }
+  
+  /* Mobile menu overlay */
+  .nav-mobile{
     position: fixed;
     inset: 0;
     background: var(--color-bg-primary);
@@ -307,27 +310,50 @@ a {
     visibility: hidden;
     transition: var(--transition-smooth);
     z-index: 1100;
-}
-
-.nav-mobile.active {
+  }
+  
+  .nav-mobile.active{
     opacity: 1;
     visibility: visible;
-}
-
-.nav-mobile a {
+  }
+  
+  .nav-mobile a{
     font-size: 1.4rem;
     text-transform: uppercase;
     letter-spacing: 0.25em;
-}
-
-/* Hamburger animation */
-.menu-toggle.active span:nth-child(1) {
+  }
+  
+  /* Hamburger animation */
+  .menu-toggle.active span:nth-child(1){
     transform: rotate(45deg) translate(5px,5px);
-}
-.menu-toggle.active span:nth-child(2) { opacity: 0; }
-.menu-toggle.active span:nth-child(3) {
+  }
+  .menu-toggle.active span:nth-child(2){
+    opacity: 0;
+  }
+  .menu-toggle.active span:nth-child(3){
     transform: rotate(-45deg) translate(5px,-5px);
-}
+  }
+  
+  /* ============================================
+     RESPONSIVE
+     ============================================ */
+  
+  @media (max-width: 860px){
+    .nav-left,
+    .nav-right{
+      display: none;
+    }
+    .menu-toggle{
+      display: flex;
+    }
+  }
+  
+  @media (max-width: 480px){
+    .logo-text{ font-size: 1.1rem; }
+    .logo-tagline{ font-size: 0.65rem; }
+  }
+  
+
 
 /* ============================================
    HERO SECTION
@@ -671,6 +697,7 @@ a {
    ============================================ */
 .about {
     position: relative;
+    
 }
 
 .about-content {
@@ -1423,10 +1450,12 @@ a {
    RESPONSIVE BREAKPOINTS
    ============================================ */
 
-   @media (max-width: 1024px) {
-    .nav-left { transform: translateX(-350px); gap: 35px; }
-    .nav-right { transform: translateX(200px); gap: 35px; }
-}
+   @media (max-width: 1024px){
+    .navbar .container{
+      column-gap: clamp(14px, 3vw, 40px);
+    }
+  }
+  
 
 @media (max-width: 860px) {
     .nav-left, .nav-right { display: none; }
@@ -1483,7 +1512,7 @@ a {
         flex-direction: column; /* forces text above image */
         text-align: center;
         gap: 2.5rem;
-        padding: 0 1.2rem;
+        padding: 1rem 1.2rem;
     }
 
     .about-text {
@@ -1682,3 +1711,23 @@ a {
         box-shadow: 0 12px 32px rgba(0,0,0,0.35);
     }
 }
+
+.footer-logo{
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+  
+  /* PNG logo */
+  .footer-logo-img{
+    height: 60px;          /* adjust: 36–44px works well */
+    width: 60px;
+    display: block;
+    object-fit: contain;
+  }
+  
+  /* Optional: dark-theme polish */
+  .footer-logo-img{
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
+  }
+  
