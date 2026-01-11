@@ -13,7 +13,58 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <style>
-    /* Carnival Cinema Booking Layout */
+    /* ✅ FORCE: page must be scrollable on mobile */
+html, body {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  position: static !important;
+}
+
+/* ✅ If your global CSS adds a scroll-lock class, neutralize it */
+body.menu-open,
+body.nav-open,
+body.no-scroll,
+html.no-scroll {
+  overflow: auto !important;
+  position: static !important;
+}
+
+.nav-mobile {
+  display: none;
+  pointer-events: none;
+}
+.nav-mobile.active {
+  display: block;
+  pointer-events: auto;
+}
+
+/* only open when you add .is-open */
+.nav-mobile.is-open {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* ✅ Some navs use a fullscreen overlay/backdrop */
+.nav-overlay,
+.menu-overlay,
+.nav-backdrop,
+.overlay {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* ✅ Ensure your form/button is above normal content */
+.booking-form-card,
+#bookingForm,
+#submitBooking {
+  position: relative;
+  z-index: 5;
+}
+
 
     .booking-layout {
       display: flex;
@@ -118,6 +169,10 @@
       background-color: rgba(42, 42, 42, 0.5);
       border-radius: 15px;
       backdrop-filter: blur(10px);
+      overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
     }
 
     /* Seat Table Styles */
@@ -328,10 +383,55 @@
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.1);
     }
-    
+    .booking-status{
+  margin-top: 1rem;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  text-align: center;
+  display: none;
+  backdrop-filter: blur(10px);
+}
+
+.booking-status.info{
+  display: block;
+  color: #c9a227;
+  background: rgba(201,162,39,0.15);
+  border: 1px solid rgba(201,162,39,0.35);
+}
+
+.booking-status.success{
+  display: block;
+  color: #c9a227;
+  background: rgba(201,162,39,0.18);
+  border: 1px solid rgba(201,162,39,0.45);
+}
+
+.booking-status.error{
+  display: block;
+  color: #ff6b6b;
+  background: rgba(255,107,107,0.12);
+  border: 1px solid rgba(255,107,107,0.35);
+}
+
+
+    /* ✅ Mobile menu should NOT block page when closed */
+.nav-mobile {
+  display: none;
+  pointer-events: none;
+}
+
+/* ✅ Only when menu is open, allow clicks */
+.nav-mobile.is-open {
+  display: block;
+  pointer-events: auto;
+}
+
 
     /* Responsive adjustments */
     @media (max-width: 768px) {
+      
+
       .seat-table td {
         padding: 1px;
       }
@@ -359,6 +459,11 @@
         width: 5px;
         height: 5px;
       }
+      body, .section-padding, .booking-layout, .booking-form-card, .seat-map {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
     }
 /* Zone seat colors (uses CSS variable per zone) */
 .squaredCheckBoxStyle[data-zone] label{
@@ -439,9 +544,11 @@
   color: rgba(170, 210, 255, 0.95);
 }
 
+
+
   </style>
 </head>
-<body>
+<body data-page="booking">
   <!-- Navigation -->
 <nav class="navbar">
   <div class="container">
@@ -563,13 +670,22 @@
             Confirm Booking
           </button>
 
-          <p id="bookingStatus"></p>
+          <p id="bookingStatus" class="booking-status"></p>
+
+          <!-- Booking Popup -->
+
+
 
         </form>
       </div>
     </div>
+    
   </section>
 
+
+  
+
+  
   <script src="js/main.js"></script>
   <script src="js/booking.js"></script>
 </body>

@@ -11,6 +11,14 @@ let bookedSeats = new Set();
 let selectedSeats = new Set();
 
 
+function setBookingStatus(message, type = 'info') {
+  const el = document.getElementById('bookingStatus');
+  if (!el) return;
+
+  el.className = `booking-status ${type}`;
+  el.textContent = message;
+}
+
 // ===== HELPERS =====
 function getQueryParam(name) {
   const params = new URLSearchParams(window.location.search);
@@ -48,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const bookingForm = document.getElementById('bookingForm');
   const bookingStatus = document.getElementById('bookingStatus');
   const submitBtn = document.getElementById('submitBooking');
+  
 
   let currentEvent = null;
 
@@ -428,28 +437,27 @@ tr.appendChild(td);
   bookingForm.addEventListener('submit', e => {
     e.preventDefault();
 
-    const name = bookingForm.name.value.trim();
-    const email = bookingForm.email.value.trim();
-    const phone = bookingForm.phone.value.trim();
-    const seats = selectedSeatsInput.value.trim();
+  const name  = bookingForm.name.value.trim();
+  const email = bookingForm.email.value.trim();
+  const phone = bookingForm.phone.value.trim();
+  const seats = selectedSeatsInput.value.trim();
 
-    if (!seats) {
-      bookingStatus.textContent = 'Please select at least one seat.';
-      bookingStatus.style.color = '#ff6b6b';
-      return;
-    }
-    if (!name || !email || !phone) {
-      bookingStatus.textContent = 'Please fill in all details.';
-      bookingStatus.style.color = '#ff6b6b';
-      return;
-    }
+  // ✅ validation
+  if (!seats) {
+    setBookingStatus('Please select at least one seat.', 'error');
+    return;
+  }
+  if (!name || !email || !phone) {
+    setBookingStatus('Please fill in all details.', 'error');
+    return;
+  }
 
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Submitting...';
-    bookingStatus.textContent = '';
-    bookingStatus.style.color = '#a0a0a8';
+  // ✅ show “submitting…” only AFTER validation passes
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting...';
+  setBookingStatus('Submitting your booking… please wait.', 'info');
 
- 
+
     const zones = seatmap.zones || {};
     const checkedBoxes = document.querySelectorAll('.squaredCheckBoxStyle input[type="checkbox"]:checked');
 
@@ -488,23 +496,20 @@ tr.appendChild(td);
         console.log("Booking response:", data);
 
         if (!data || typeof data.success === 'undefined') {
-          bookingStatus.textContent = 'Booking submitted! We will contact you soon.';
-          bookingStatus.style.color = '#c9a227';
+          setBookingStatus('✅ Booking submitted! We will contact you soon.', 'success');
         }
         else if (data.success) {
-          bookingStatus.textContent = data.message || 'Booking confirm! Kindly Check Your Email for payment.';
-          bookingStatus.style.color = '#c9a227';
+          setBookingStatus('✅ Booking confirmed. Please check your email for the payment details and complete the payment to secure your booking.', 'success');
         }
         else if (data.conflict) {
           const taken = (data.conflictSeats || []).join(', ');
-          bookingStatus.textContent =
-            `Sorry, these seats were just booked: ${taken}. Choose others.`;
-          bookingStatus.style.color = '#ff6b6b';
+          setBookingStatus(`❌ These seats were just booked: ${taken}. Please choose others.`, 'error');
         }
         else {
-          bookingStatus.textContent = data.message || 'Booking failed.';
-          bookingStatus.style.color = '#ff6b6b';
+          setBookingStatus('❌ Booking failed. Please try again.', 'error');
         }
+        
+        
 
         // Reset UI
         selectedSeats.clear();
@@ -516,8 +521,8 @@ tr.appendChild(td);
       })
       .catch(err => {
         console.error("Booking error:", err);
-        bookingStatus.textContent = 'Network error. Please try again.';
-        bookingStatus.style.color = '#ff6b6b';
+        setBookingStatus('Network error. Please try again.', 'error');
+
       })
       .finally(() => {
         submitBtn.disabled = false;
