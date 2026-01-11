@@ -140,64 +140,69 @@
     }
 
     /* Checkbox Styling */
-    .squaredCheckBoxStyle {
-      position: relative;
-      display: inline-block;
-    }
+    /* Seat base */
+.squaredCheckBoxStyle{
+  position: relative;
+  display: inline-block;
+}
 
-    .squaredCheckBoxStyle input[type="checkbox"] {
-      opacity: 0;
-      position: absolute;
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      z-index: 2;
-    }
+.squaredCheckBoxStyle input[type="checkbox"]{
+  opacity: 0;
+  position: absolute;
+  inset: 0;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  z-index: 2;
+}
 
-    .squaredCheckBoxStyle label {
-      display: inline-block;
-      width: 18px;
-      height: 18px;
-      background-color: #D5D8DC;
-      border: 1.5px solid #c9a227;
-      border-radius: 3px;
-      cursor: pointer;
-      position: relative;
-      transition: all 0.2s ease;
-    }
+/* ✅ IMPORTANT: label must have size */
+.squaredCheckBoxStyle label{
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 
-    .squaredCheckBoxStyle label:hover {
-      transform: scale(1.15);
-      box-shadow: 0 0 8px rgba(201, 162, 39, 0.6);
-    }
+  /* zone color */
+  background-color: var(--zone-color, #D5D8DC);
+  border: 1.5px solid rgba(0,0,0,0.25);
+}
 
-    .squaredCheckBoxStyle input[type="checkbox"]:checked + label {
-      background-color: #c9a227;
-      border-color: #a88420;
-    }
+/* hover */
+.squaredCheckBoxStyle label:hover{
+  transform: scale(1.15);
+  box-shadow: 0 0 8px rgba(201, 162, 39, 0.6);
+}
 
-    .squaredCheckBoxStyle input[type="checkbox"]:checked + label::after {
-      content: "✓";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: white;
-      font-size: 11px;
-      font-weight: bold;
-    }
+/* selected overrides zone */
+.squaredCheckBoxStyle input[type="checkbox"]:checked + label{
+  background-color: #c9a227;
+  border-color: #a88420;
+}
 
-    .squaredCheckBoxStyle input[type="checkbox"]:disabled + label {
-      background-color: #666;
-      border-color: #444;
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
+.squaredCheckBoxStyle input[type="checkbox"]:checked + label::after{
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+}
 
-    .squaredCheckBoxStyle input[type="checkbox"]:disabled + label:hover {
-      transform: none;
-      box-shadow: none;
-    }
+/* booked */
+.squaredCheckBoxStyle input[type="checkbox"]:disabled + label{
+  background-color: #666;
+  border-color: #444;
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
 
     /* Unavailable seats (wheelchair spaces, etc) */
     .squaredCheckBoxNAStyle {
@@ -355,6 +360,17 @@
         height: 5px;
       }
     }
+/* Zone seat colors (uses CSS variable per zone) */
+.squaredCheckBoxStyle[data-zone] label{
+  background-color: var(--zone-color, #4CAF50);
+  border-color: rgba(0,0,0,0.25);
+}
+
+/* Keep selected color as your gold highlight */
+.squaredCheckBoxStyle input[type="checkbox"]:checked + label{
+  background-color: #c9a227;
+  border-color: #a88420;
+}
 
     /* Cell that holds an icon/sign */
 .seat-icon-cell{
@@ -514,6 +530,9 @@
         <div class="booking-summary">
           <div class="booking-summary-label">Selected Seats</div>
           <div class="selected-seats-display" id="selectedSeatsLabel">No seats selected</div>
+          <div class="booking-summary-label">Total</div>
+          <div class="selected-seats-display" id="totalPriceLabel">$0</div>
+
         </div>
 
         <form id="bookingForm" class="contact-form">
@@ -545,6 +564,7 @@
           </button>
 
           <p id="bookingStatus"></p>
+
         </form>
       </div>
     </div>

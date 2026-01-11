@@ -1,6 +1,6 @@
 // ===== CONFIG =====
 const GOOGLE_SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycbwSXWVIF-652S3jYEIn5M8A8hHHhRPtgXuErbQIUM5WJOyFVMK2Ac_hfNAmqSsPr7Vd/exec';
+  'https://script.google.com/macros/s/AKfycbyd6UkEWZAvwhMoo5pdnwu5UQRNMFGWcw45ykiRKZP3NUnzZ68kz0aNw1pA2hV2JgbW/exec';
   
 
 const EVENTS_SOURCE = 'data/live-events.json';
@@ -108,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(data => {
         console.log("Loaded seatmap:", data);
         seatmap = data;
+      
 
         // After loading layout, load booked seats
         loadBookedSeats();
@@ -194,7 +195,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Build each row in the section
       // Build each row in the section
-    const rowLetters = Object.keys(section.rows);
+      const rowKeys = Object.keys(section.rows);
+
+      // Helper: A–Z letter rows only
+      const letterRows = rowKeys
+        .filter(k => /^[A-Z]$/.test(k))
+        .sort((a, b) => a.localeCompare(b));
+
+      // Helper: non-letter rows (your " " and "  ")
+      const specialRows = rowKeys.filter(k => !/^[A-Z]$/.test(k));
+
+      // Choose where to insert your special rows:
+      // - " " will be inserted AFTER row I (so it sits between I and J)
+      // - "  " will be inserted AFTER row S (so it sits between S and T)
+      const rowLetters = [];
+      letterRows.forEach(r => {
+        rowLetters.push(r);
+
+        if (r === 'I' && specialRows.includes(' ')) rowLetters.push(' ');
+        if (r === 'S' && specialRows.includes('  ')) rowLetters.push('  ');
+      });
+
+      // If any other special rows exist, append at end
+      specialRows.forEach(k => {
+        if (!rowLetters.includes(k)) rowLetters.push(k);
+      });
+
+      
 
     const COLSPAN = 250; // same as header colSpan (keep consistent)
 
@@ -281,29 +308,52 @@ if (typeof cell === 'object' && cell && cell.type) {
   return;
 }
 
-        // 3) Seat
-        const seatNum = String(cell);
-        const seatCode = `${rowLetter}${seatNum}`;
+        // 3) Seat (supports number OR { seat, zone })
+let seatNum, zoneKey;
 
-        const checkboxWrapper = document.createElement('div');
-        checkboxWrapper.className = 'squaredCheckBoxStyle';
+if (typeof cell === 'number' || typeof cell === 'string') {
+  seatNum = String(cell);
+  zoneKey = null; // unknown
+} else if (typeof cell === 'object' && cell && cell.seat != null) {
+  seatNum = String(cell.seat);
+  zoneKey = cell.zone || null;
+} else {
+  // fallback gap
+  td.innerHTML = '&nbsp;';
+  tr.appendChild(td);
+  return;
+}
 
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.name = 'SelectSeatCheckBoxGroup';
-        checkbox.value = seatCode;
-        checkbox.id = seatCode;
+const seatCode = `${rowLetter}${seatNum}`;
 
-        if (bookedSeats.has(seatCode)) checkbox.disabled = true;
+const checkboxWrapper = document.createElement('div');
+checkboxWrapper.className = 'squaredCheckBoxStyle';
 
-        const label = document.createElement('label');
-        label.htmlFor = seatCode;
+// Add zone styling if available
+if (zoneKey) {
+  checkboxWrapper.dataset.zone = zoneKey;
+}
 
-        checkboxWrapper.appendChild(checkbox);
-        checkboxWrapper.appendChild(label);
-        td.appendChild(checkboxWrapper);
+const checkbox = document.createElement('input');
+checkbox.type = 'checkbox';
+checkbox.name = 'SelectSeatCheckBoxGroup';
+checkbox.value = seatCode;
+checkbox.id = seatCode;
 
-        tr.appendChild(td);
+// Store zone on checkbox so we can price later
+if (zoneKey) checkbox.dataset.zone = zoneKey;
+
+if (bookedSeats.has(seatCode)) checkbox.disabled = true;
+
+const label = document.createElement('label');
+label.htmlFor = seatCode;
+
+checkboxWrapper.appendChild(checkbox);
+checkboxWrapper.appendChild(label);
+td.appendChild(checkboxWrapper);
+
+tr.appendChild(td);
+
       });
 
       seatGrid.appendChild(tr);
@@ -313,6 +363,8 @@ if (typeof cell === 'object' && cell && cell.type) {
 
     // Attach event listeners to all checkboxes
     attachCheckboxListeners();
+    applyZoneColors();
+
   }
 
 
@@ -338,13 +390,12 @@ if (typeof cell === 'object' && cell && cell.type) {
   function updateSelectedSeats() {
     const checkedBoxes = document.querySelectorAll('.squaredCheckBoxStyle input[type="checkbox"]:checked');
     selectedSeats = new Set(Array.from(checkedBoxes).map(cb => cb.value));
-
+  
     const sortedSeats = Array.from(selectedSeats).sort();
-
-    // Update hidden input
+  
     selectedSeatsInput.value = sortedSeats.join(', ');
-
-    // Update display
+  
+    // tags display
     if (sortedSeats.length === 0) {
       selectedSeatsLabel.innerHTML = '<span style="color: #888;">No seats selected</span>';
     } else {
@@ -352,7 +403,22 @@ if (typeof cell === 'object' && cell && cell.type) {
         .map(seat => `<span class="seat-tag">${seat}</span>`)
         .join('');
     }
+  
+    // total price
+    const zones = seatmap.zones || {};
+    let total = 0;
+  
+    checkedBoxes.forEach(cb => {
+      const zk = cb.dataset.zone;
+      if (zk && zones[zk] && typeof zones[zk].price === 'number') {
+        total += zones[zk].price;
+      }
+    });
+  
+    const totalEl = document.getElementById('totalPriceLabel');
+    if (totalEl) totalEl.textContent = `$${total}`;
   }
+  
 
 
 
@@ -383,12 +449,31 @@ if (typeof cell === 'object' && cell && cell.type) {
     bookingStatus.textContent = '';
     bookingStatus.style.color = '#a0a0a8';
 
+ 
+    const zones = seatmap.zones || {};
+    const checkedBoxes = document.querySelectorAll('.squaredCheckBoxStyle input[type="checkbox"]:checked');
+
+    const seatDetails = Array.from(checkedBoxes).map(cb => {
+    const zone = cb.dataset.zone || null;
+    const price = zone && zones[zone] && typeof zones[zone].price === 'number'
+     ? zones[zone].price
+     : 0;
+
+    return { seat: cb.value, zone, price };
+    });
+
+    const totalPrice = seatDetails.reduce((sum, s) => sum + (s.price || 0), 0);
+
+
     const payload = {
+      
       eventId: eventIdInput.value,
       eventTitle: eventTitleHidden.value,
       eventDate: eventDateInput.value,
       venue: eventVenueInput.value,
-      seats,
+      seats: seatDetails.map(s => s.seat).join(', '),
+      seatDetails,
+      totalPrice,
       name,
       email,
       phone
@@ -439,5 +524,15 @@ if (typeof cell === 'object' && cell && cell.type) {
         submitBtn.textContent = 'Confirm Booking';
       });
   });
+
+  function applyZoneColors() {
+    const zones = seatmap.zones || {};
+    document.querySelectorAll('.squaredCheckBoxStyle[data-zone]').forEach(el => {
+      const zk = el.dataset.zone;
+      const z = zones[zk];
+      if (z?.color) el.style.setProperty('--zone-color', z.color);
+    });
+  }
+  
 
 });
