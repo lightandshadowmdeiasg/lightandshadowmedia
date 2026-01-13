@@ -109,14 +109,19 @@ html.no-scroll {
       border: 2px solid;
     }
 
-    .legend-available {
-      background-color: #D5D8DC;
-      border-color: #c9a227;
+    .legend-gold {
+      background-color: #d3af37;
+      border-color: #d3af37;
     }
 
-    .legend-selected {
-      background-color: #c9a227;
-      border-color: #a88420;
+    .legend-silver {
+      background-color: #8a8f98;
+      border-color: #8a8f98;
+    }
+
+    .legend-bronze {
+      background-color: #cd7f32;
+      border-color: #cd7f32;
     }
 
     .legend-booked {
@@ -625,10 +630,27 @@ html.no-scroll {
   </header>
 
   <section class="section-padding">
-    <div class="screen-container">
-      <div class="screen-label">All eyes this way please</div>
-      <div class="screen">SCREEN</div>
+    <!-- Legend at bottom -->
+    <div class="legend">
+      <span class="legend-item">
+        <span class="legend-box legend-gold"></span> Gold - 150 SGD
+      </span>
+      <span class="legend-item">
+        <span class="legend-box legend-silver"></span> Silver - 100 SGD
+      </span>
+      <span class="legend-item">
+        <span class="legend-box legend-bronze"></span> Bronze - 75 SGD
+      </span>
+      <span class="legend-item">
+        <span class="legend-box legend-booked"></span> Booked
+      </span>
     </div>
+    <div class="screen-container">
+      
+      <div class="screen">SCREEN</div>
+      <div class="screen-label">All eyes this way please</div>
+    </div>
+    
     <div class="container booking-layout">
       <!-- Seat map -->
       <div class="seat-map">
@@ -638,25 +660,12 @@ html.no-scroll {
           </table>
         </div>
 
-        <!-- Legend at bottom -->
-        <div class="legend">
-          <span class="legend-item">
-            <span class="legend-box legend-available"></span> Available
-          </span>
-          <span class="legend-item">
-            <span class="legend-box legend-selected"></span> Selected
-          </span>
-          <span class="legend-item">
-            <span class="legend-box legend-booked"></span> Booked
-          </span>
-        </div>
-
         <!-- Screen at bottom -->
         <div class="screen-container">
           <div class="screen-label"></div>
           <div class="screen">Main Entrance</div>
         </div>
-      </div>
+        </div>
 
       <!-- Form -->
       <div class="booking-form-card">
