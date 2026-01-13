@@ -459,6 +459,9 @@ html.no-scroll {
         width: 5px;
         height: 5px;
       }
+     .squaredCheckBoxStyle label .seat-num{
+       font-size: 7px;
+      }
       body, .section-padding, .booking-layout, .booking-form-card, .seat-map {
     height: auto !important;
     max-height: none !important;
@@ -543,6 +546,31 @@ html.no-scroll {
 .seat-sign--toilet .seat-sign__text{
   color: rgba(170, 210, 255, 0.95);
 }
+
+/* seat number inside the seat box */
+.squaredCheckBoxStyle label .seat-num{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(0,0,0,0.75);
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* when selected, make number readable */
+.squaredCheckBoxStyle input[type="checkbox"]:checked + label .seat-num{
+  color: rgba(255,255,255,0.95);
+}
+
+/* when booked/disabled */
+.squaredCheckBoxStyle input[type="checkbox"]:disabled + label .seat-num{
+  color: rgba(255,255,255,0.65);
+}
+
 
 
 

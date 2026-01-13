@@ -356,6 +356,8 @@ if (bookedSeats.has(seatCode)) checkbox.disabled = true;
 
 const label = document.createElement('label');
 label.htmlFor = seatCode;
+//show seat number
+label.innerHTML = `<span class="seat-num">${seatNum}</span>`;
 
 checkboxWrapper.appendChild(checkbox);
 checkboxWrapper.appendChild(label);
