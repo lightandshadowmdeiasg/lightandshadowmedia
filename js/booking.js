@@ -128,8 +128,64 @@ document.addEventListener('DOMContentLoaded', () => {
           '<tr><td colspan="100"><p style="color:#a0a0a8;">Unable to load seating layout.</p></td></tr>';
       });
   }
-
-
+  function getAllSeatCodesFromSeatmap() {
+    const codes = new Set();
+  
+    const plan = seatmap?.SEATPLAN;
+    if (!plan) return codes;
+  
+    Object.keys(plan).forEach(rowKey => {
+      // ✅ match your UI: only A–Z rows
+      if (!/^[A-Z]$/.test(rowKey)) return;
+  
+      const layout = plan[rowKey];
+      if (!Array.isArray(layout)) return;
+  
+      layout.forEach(cell => {
+        // ✅ ignore gaps/aisles
+        if (cell === null || cell === undefined || cell === '' || cell === 'AISLE') return;
+  
+        // ✅ ignore icons like {type:"EXIT"} / {type:"TOILET"}
+        if (typeof cell === 'object' && cell && cell.type) return;
+  
+        // seat as { seat, zone }
+        if (typeof cell === 'object' && cell && cell.seat != null) {
+          const seatNum = String(cell.seat).trim();
+          if (seatNum) codes.add(`${rowKey}${seatNum}`);
+          return;
+        }
+  
+        // seat as number (in case you ever use it)
+        if (typeof cell === 'number') {
+          const seatNum = String(cell).trim();
+          if (seatNum) codes.add(`${rowKey}${seatNum}`);
+        }
+      });
+    });
+  
+    return codes;
+  }
+  
+  
+  function updateSeatCountsUI() {
+    const allSeats = getAllSeatCodesFromSeatmap();
+  
+    // booked count should only count seats that actually exist in layout
+    let bookedCount = 0;
+    bookedSeats.forEach(code => {
+      if (allSeats.has(code)) bookedCount++;
+    });
+  
+    const totalSeats = allSeats.size;
+    const availableCount = Math.max(0, totalSeats - bookedCount);
+  
+    const bookedEl = document.getElementById('bookedCount');
+    const availableEl = document.getElementById('availableCount');
+  
+    if (bookedEl) bookedEl.textContent = String(bookedCount);
+    if (availableEl) availableEl.textContent = String(availableCount);
+  }
+  
 
   // ==========================================================
   // LOAD BOOKED SEATS FROM GOOGLE SHEETS
@@ -147,12 +203,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Now build UI
+        
+        updateSeatCountsUI();
+
         buildSeatMap();
       })
       .catch(err => {
         console.error("Failed to load booked seats:", err);
+        updateSeatCountsUI();
         buildSeatMap();
       });
+      
   }
 
 

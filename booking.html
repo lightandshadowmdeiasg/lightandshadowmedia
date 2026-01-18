@@ -576,6 +576,23 @@ html.no-scroll {
   color: rgba(255,255,255,0.65);
 }
 
+.seat-counts{
+  display:flex;
+  justify-content:center;
+  gap:18px;
+  margin: 14px 0 0;
+  flex-wrap: wrap;
+  color: rgba(255,255,255,0.8);
+  font-size: 0.95rem;
+}
+.seat-count{
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+}
+.seat-count b{ color:#c9a227; }
 
 
 
@@ -645,6 +662,11 @@ html.no-scroll {
         <span class="legend-box legend-booked"></span> Booked
       </span>
     </div>
+    <div class="seat-counts" id="seatCounts">
+      <span class="seat-count booked">Booked: <b id="bookedCount">0</b> seats</span>
+      <!-- <span class="seat-count available">Available: <b id="availableCount">0</b></span> -->
+    </div>
+    
     <div class="screen-container">
       
       <div class="screen">SCREEN</div>
