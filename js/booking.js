@@ -10,7 +10,6 @@ let seatmap = {};
 let bookedSeats = new Set();
 let selectedSeats = new Set();
 
-
 function setBookingStatus(message, type = 'info', title = null) {
   const modal = document.getElementById('statusModal');
   const card = modal?.querySelector('.status-card');
@@ -18,11 +17,15 @@ function setBookingStatus(message, type = 'info', title = null) {
   const titleEl = document.getElementById('statusTitle');
   const iconEl = document.getElementById('statusIcon');
 
+  // NEW: controls
+  const closeBtn = modal?.querySelector('.status-close');
+  const okBtn = document.getElementById('statusOkBtn');
+  const backdrop = modal?.querySelector('.status-backdrop');
+
   if (!modal || !card || !msgEl || !titleEl || !iconEl) return;
 
-  // Set content
+  // Content
   msgEl.innerHTML = message;
-
 
   // Title + icon
   const map = {
@@ -39,6 +42,16 @@ function setBookingStatus(message, type = 'info', title = null) {
   card.classList.remove('info', 'success', 'error');
   card.classList.add(type);
 
+  // ✅ NEW: hide close controls during "info"
+  const isBlocking = (type === 'info');
+
+  if (closeBtn) closeBtn.style.display = isBlocking ? 'none' : '';
+  if (okBtn) okBtn.style.display = isBlocking ? 'none' : '';
+  if (backdrop) backdrop.style.pointerEvents = isBlocking ? 'none' : '';
+  
+  // also block ESC close while info
+  modal.dataset.blockClose = isBlocking ? '1' : '0';
+
   // Open
   modal.classList.add('is-open');
   modal.setAttribute('aria-hidden', 'false');
@@ -54,15 +67,25 @@ function closeStatusModal() {
   modal.setAttribute('aria-hidden', 'true');
 }
 
-// click backdrop / X / OK
 document.addEventListener('click', (e) => {
+  const modal = document.getElementById('statusModal');
+  if (!modal) return;
+
+  // if blocking (submitting), ignore close attempts
+  if (modal.dataset.blockClose === '1') return;
+
   if (e.target && e.target.matches('[data-close]')) closeStatusModal();
 });
 
-// ESC key closes
 document.addEventListener('keydown', (e) => {
+  const modal = document.getElementById('statusModal');
+  if (!modal) return;
+
+  if (modal.dataset.blockClose === '1') return;
+
   if (e.key === 'Escape') closeStatusModal();
 });
+
 
 function getQueryParam(name) {
   const params = new URLSearchParams(window.location.search);
