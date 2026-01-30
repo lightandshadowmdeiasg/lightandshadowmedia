@@ -562,7 +562,7 @@ tr.appendChild(td);
           setBookingStatus('✅ Booking submitted! We will contact you soon.', 'success');
         }
         else if (data.success) {
-          setBookingStatus('✅ Booking confirmed. Please check your email for the payment details and complete the payment to secure your booking.', 'success');
+          setBookingStatus('✅ Booking confirmed. Please complete the payment process first. Afte the payment, we will send the ticket(s) to your email within 24 hours.', 'success');
         }
         else if (data.conflict) {
           const taken = (data.conflictSeats || []).join(', ');
