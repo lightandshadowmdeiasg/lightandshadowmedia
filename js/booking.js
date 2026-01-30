@@ -11,15 +11,58 @@ let bookedSeats = new Set();
 let selectedSeats = new Set();
 
 
-function setBookingStatus(message, type = 'info') {
-  const el = document.getElementById('bookingStatus');
-  if (!el) return;
+function setBookingStatus(message, type = 'info', title = null) {
+  const modal = document.getElementById('statusModal');
+  const card = modal?.querySelector('.status-card');
+  const msgEl = document.getElementById('statusMessage');
+  const titleEl = document.getElementById('statusTitle');
+  const iconEl = document.getElementById('statusIcon');
 
-  el.className = `booking-status ${type}`;
-  el.textContent = message;
+  if (!modal || !card || !msgEl || !titleEl || !iconEl) return;
+
+  // Set content
+  msgEl.textContent = message;
+
+  // Title + icon
+  const map = {
+    info:    { t: 'Please wait',   i: '⏳' },
+    success: { t: 'Booking sent',  i: '✅' },
+    error:   { t: 'Something went wrong', i: '⚠️' }
+  };
+  const meta = map[type] || map.info;
+
+  titleEl.textContent = title || meta.t;
+  iconEl.textContent = meta.i;
+
+  // Type class
+  card.classList.remove('info', 'success', 'error');
+  card.classList.add(type);
+
+  // Open
+  modal.classList.add('is-open');
+  modal.setAttribute('aria-hidden', 'false');
 }
 
+
 // ===== HELPERS =====
+
+function closeStatusModal() {
+  const modal = document.getElementById('statusModal');
+  if (!modal) return;
+  modal.classList.remove('is-open');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+// click backdrop / X / OK
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.matches('[data-close]')) closeStatusModal();
+});
+
+// ESC key closes
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeStatusModal();
+});
+
 function getQueryParam(name) {
   const params = new URLSearchParams(window.location.search);
   return params.get(name);
@@ -562,7 +605,7 @@ tr.appendChild(td);
           setBookingStatus('✅ Booking submitted! We will contact you soon.', 'success');
         }
         else if (data.success) {
-          setBookingStatus('✅ Booking confirmed. Please complete the payment process first. After the payment, we will send the ticket(s) to your email within 24 hours.', 'success');
+          setBookingStatus('✅ Booking registered! Please complete the payment process first to complete the booking. After the payment, we will send the ticket(s) to your email within 24 hours.', 'success');
         }
         else if (data.conflict) {
           const taken = (data.conflictSeats || []).join(', ');

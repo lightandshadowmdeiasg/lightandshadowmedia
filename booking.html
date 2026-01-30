@@ -595,6 +595,101 @@ html.no-scroll {
 .seat-count b{ color:#c9a227; }
 
 
+/* ===== Booking Status Modal ===== */
+.status-modal{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.status-modal.is-open{ display: flex; }
+
+.status-backdrop{
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+}
+
+.status-card{
+  position: relative;
+  width: min(520px, calc(100% - 28px));
+  border-radius: 18px;
+  padding: 18px 18px 14px;
+  background: rgba(10,10,14,0.92);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.75);
+  transform: translateY(6px);
+  animation: popIn .18s ease-out forwards;
+}
+
+@keyframes popIn{
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.status-close{
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.9);
+  cursor: pointer;
+}
+
+.status-head{
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.status-icon{
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  font-size: 18px;
+}
+
+.status-title{
+  margin: 0;
+  font-size: 1.1rem;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+
+.status-message{
+  margin: 8px 0 14px;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.status-actions{
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Type accents */
+.status-card.info    { border-color: rgba(201,162,39,0.35); }
+.status-card.success { border-color: rgba(201,162,39,0.45); }
+.status-card.error   { border-color: rgba(255,107,107,0.35); }
+
+.status-card.info    .status-icon{ box-shadow: 0 0 22px rgba(201,162,39,0.18); }
+.status-card.success .status-icon{ box-shadow: 0 0 22px rgba(201,162,39,0.22); }
+.status-card.error   .status-icon{ box-shadow: 0 0 22px rgba(255,107,107,0.18); }
 
   </style>
 </head>
@@ -729,7 +824,7 @@ html.no-scroll {
             Confirm Booking
           </button>
 
-          <p id="bookingStatus" class="booking-status"></p>
+          <!-- <p id="bookingStatus" class="booking-status"></p> -->
 
           <!-- Booking Popup -->
 
@@ -738,7 +833,26 @@ html.no-scroll {
         </form>
       </div>
     </div>
-    
+        <!-- Booking Status Modal -->
+    <div id="statusModal" class="status-modal" aria-hidden="true">
+      <div class="status-backdrop" data-close></div>
+
+      <div class="status-card" role="dialog" aria-modal="true" aria-labelledby="statusTitle">
+        <button class="status-close" type="button" aria-label="Close" data-close>✕</button>
+
+        <div class="status-head">
+          <div id="statusIcon" class="status-icon">ℹ️</div>
+          <h3 id="statusTitle" class="status-title">Status</h3>
+        </div>
+
+        <p id="statusMessage" class="status-message"></p>
+
+        <div class="status-actions">
+          <button id="statusOkBtn" type="button" class="btn btn-primary" data-close>OK</button>
+        </div>
+      </div>
+    </div>
+
   </section>
 
 
