@@ -21,7 +21,8 @@ function setBookingStatus(message, type = 'info', title = null) {
   if (!modal || !card || !msgEl || !titleEl || !iconEl) return;
 
   // Set content
-  msgEl.textContent = message;
+  msgEl.innerHTML = message;
+
 
   // Title + icon
   const map = {
@@ -605,7 +606,12 @@ tr.appendChild(td);
           setBookingStatus('✅ Booking submitted! We will contact you soon.', 'success');
         }
         else if (data.success) {
-          setBookingStatus('✅ Booking registered! Please complete the payment process first to complete the booking. After the payment, we will send the ticket(s) to your email within 24 hours.', 'success');
+          setBookingStatus('Booking နှင့် ကိုယ်ရေး အချက်အလက် များကို လက်ခံရှိပါသည်။<br>' +
+  'PayNow to UEN<br>' +
+  '53384102W.<br>'+
+  'LIGHT AND SHADOW MEDIA.<br>' +
+  'သို့ ကျသင့်ငွေကိုလွှဲပေးပြီး payment screenshot ကို ShweTV messenger သို့ ပို့ထားပေးပါ။<br>' +
+  '၂၄ နာရီအတွင်း E- ticket ပို့ပေးပါမယ်။', 'success');
         }
         else if (data.conflict) {
           const taken = (data.conflictSeats || []).join(', ');
