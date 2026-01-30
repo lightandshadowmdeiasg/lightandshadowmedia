@@ -562,7 +562,7 @@ tr.appendChild(td);
           setBookingStatus('✅ Booking submitted! We will contact you soon.', 'success');
         }
         else if (data.success) {
-          setBookingStatus('✅ Booking confirmed. Please complete the payment process first. Afte the payment, we will send the ticket(s) to your email within 24 hours.', 'success');
+          setBookingStatus('✅ Booking confirmed. Please complete the payment process first. After the payment, we will send the ticket(s) to your email within 24 hours.', 'success');
         }
         else if (data.conflict) {
           const taken = (data.conflictSeats || []).join(', ');
