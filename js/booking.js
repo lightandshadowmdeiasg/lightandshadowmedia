@@ -629,12 +629,13 @@ tr.appendChild(td);
           setBookingStatus('✅ Booking submitted! We will contact you soon.', 'success');
         }
         else if (data.success) {
-          setBookingStatus('Booking နှင့် ကိုယ်ရေး အချက်အလက် များကို လက်ခံရှိပါသည်။<br>' +
-  'PayNow to UEN<br>' +
-  '53384102W.<br>'+
-  'LIGHT AND SHADOW MEDIA.<br>' +
-  'သို့ ကျသင့်ငွေကိုလွှဲပေးပြီး payment screenshot ကို ShweTV messenger သို့ ပို့ထားပေးပါ။<br>' +
-  '၂၄ နာရီအတွင်း E- ticket ပို့ပေးပါမယ်။', 'success');
+          setBookingStatus('Booking နှင့် ကိုယ်ရေး အချက်အလက် များကို လက်ခံရှိပါသည်။<br><br>' +
+  '<b>(1)</b> PayNow &nbsp; to &nbsp; UEN<br>' +
+  '&nbsp;&nbsp;&nbsp;&nbsp;<b>53384102W</b><br>'+
+  '&nbsp;&nbsp;&nbsp;&nbsp;LIGHT AND SHADOW MEDIA. သို့ ကျသင့်ငွေကိုလွှဲပေးပါ။<br><br>' +
+  '<b>(2)</b> Add Reference နေရာတွင် Seat Number (ခုံနံပါတ်)ကိုထည့်ပေးပါ။<br><br>'+
+  '<b>(3)</b> payment screenshot ကို ShweTV messenger သို့ ပို့ထားပေးပါ။<br><br>' +
+  '<b>၂၄ နာရီအတွင်း E- ticket ပို့ပေးပါမယ်။<b>', 'success');
         }
         else if (data.conflict) {
           const taken = (data.conflictSeats || []).join(', ');
