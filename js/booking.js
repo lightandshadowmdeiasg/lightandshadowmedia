@@ -124,6 +124,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const bookingStatus = document.getElementById('bookingStatus');
   const submitBtn = document.getElementById('submitBooking');
   
+ 
+
 
   let currentEvent = null;
 
@@ -446,22 +448,70 @@ if (typeof cell === 'object' && cell && cell.type) {
 }
 
         // 3) Seat (supports number OR { seat, zone })
-let seatNum, zoneKey;
+// let seatNum, zoneKey;
+
+// if (typeof cell === 'number' || typeof cell === 'string') {
+//   seatNum = String(cell);
+//   zoneKey = null; // unknown
+// } else if (typeof cell === 'object' && cell && cell.seat != null) {
+//   seatNum = String(cell.seat);
+//   zoneKey = cell.zone || null;
+// } else {
+//   // fallback gap
+//   td.innerHTML = '&nbsp;';
+//   tr.appendChild(td);
+//   return;
+// }
+// 3) Seat (supports number OR { seat, zone, state })
+let seatNum, zoneKey, isUnavailable = false;
 
 if (typeof cell === 'number' || typeof cell === 'string') {
   seatNum = String(cell);
-  zoneKey = null; // unknown
+  zoneKey = null;
+  isUnavailable = false;
 } else if (typeof cell === 'object' && cell && cell.seat != null) {
   seatNum = String(cell.seat);
   zoneKey = cell.zone || null;
+
+  // ✅ NEW: unavailable flag from seatmap.json
+  isUnavailable = (String(cell.state || '').toUpperCase() === 'UNAVAILABLE');
 } else {
-  // fallback gap
   td.innerHTML = '&nbsp;';
   tr.appendChild(td);
   return;
 }
 
 const seatCode = `${rowLetter}${seatNum}`;
+
+// ✅ UNAVAILABLE: show seat number but cannot click
+if (isUnavailable) {
+  const checkboxWrapper = document.createElement('div');
+  checkboxWrapper.className = 'squaredCheckBoxStyle is-unavailable';
+
+  if (zoneKey) checkboxWrapper.dataset.zone = zoneKey;
+
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.name = 'SelectSeatCheckBoxGroup';
+  checkbox.value = seatCode;
+  checkbox.id = seatCode;
+  checkbox.disabled = true; // cannot book
+
+  const label = document.createElement('label');
+  label.htmlFor = seatCode;
+  label.title = 'Unavailable';
+  label.innerHTML = `<span class="seat-num">${seatNum}</span>`;
+
+  checkboxWrapper.appendChild(checkbox);
+  checkboxWrapper.appendChild(label);
+  td.appendChild(checkboxWrapper);
+
+  tr.appendChild(td);
+  return;
+}
+
+
+
 
 const checkboxWrapper = document.createElement('div');
 checkboxWrapper.className = 'squaredCheckBoxStyle';

@@ -88,7 +88,8 @@ html.no-scroll {
       gap: 2rem;
       margin: 30px 0 20px;
       flex-wrap: wrap;
-      background-color: rgba(42, 42, 42, 0.8);
+      /* background-color: rgba(42, 42, 42, 0.8); */
+      background-color: black;
       padding: 15px 20px;
       border-radius: 10px;
       backdrop-filter: blur(10px);
@@ -99,7 +100,8 @@ html.no-scroll {
       align-items: center;
       gap: 10px;
       font-size: 0.9em;
-      color: rgba(255,255,255,0.8);
+      /* color: rgba(255,255,255,0.8); */
+      color: white;
     }
 
     .legend-box {
@@ -171,7 +173,7 @@ html.no-scroll {
     .seat-map-container {
       overflow-x: auto;
       padding: 20px;
-      background-color: rgba(42, 42, 42, 0.5);
+      background-color: black;
       border-radius: 15px;
       backdrop-filter: blur(10px);
       overflow-x: auto;
@@ -692,6 +694,58 @@ html.no-scroll {
 .status-card.success .status-icon{ box-shadow: 0 0 22px rgba(201,162,39,0.22); }
 .status-card.error   .status-icon{ box-shadow: 0 0 22px rgba(255,107,107,0.18); }
 
+.legend-unavailable{
+  position: relative;
+  background-color: #333;
+  border-color: #222;
+  opacity: 0.75;
+}
+
+/* Big X inside legend box */
+.legend-unavailable::after{
+  content: "×";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255,255,255,0.9);
+  font-size: 16px;   /* slightly smaller than seat X */
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* Unavailable seat (still shows number) */
+.squaredCheckBoxStyle.is-unavailable label{
+  background-color: #333 !important;
+  border-color: #222 !important;
+  opacity: 0.75;
+}
+
+.squaredCheckBoxStyle.is-unavailable label:hover{
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.squaredCheckBoxStyle.is-unavailable input:disabled + label .seat-num{
+  color: rgba(255,255,255,0.75);
+}
+
+/* Optional: little X mark */
+/* Bigger X for unavailable seats */
+.squaredCheckBoxStyle.is-unavailable label::after{
+  content: "×";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255,255,255,0.9);
+  font-size: 18px;      /* ⬅ bigger */
+  font-weight: 900;    /* ⬅ bolder */
+  line-height: 1;
+  pointer-events: none;
+}
+
+
   </style>
 </head>
 <body data-page="booking">
@@ -756,6 +810,9 @@ html.no-scroll {
       </span>
       <span class="legend-item">
         <span class="legend-box legend-booked"></span> Booked
+      </span>
+      <span class="legend-item">
+        <span class="legend-box legend-unavailable"></span> Unavailable
       </span>
     </div>
     <!-- <div class="seat-counts" id="seatCounts">
