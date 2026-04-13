@@ -11,6 +11,17 @@
       "videoUrl": "https://www.youtube.com/shorts/pIIcqgYqX3o?feature=share",
       "status": "upcoming",
       "category": "special"
+    },
+    {
+      "id": "event-002",
+      "title": "Test Event",
+      "date": "2026-09-08",
+      "venue": "Carnival Cinema Singapore @ Golden Miles | 3:00PM to 7:00PM",
+      "description": "Live Band Music Concert",
+      "thumbnail": "/assets/images/liveevents/LWW.png",
+      "videoUrl": "https://www.youtube.com/shorts/pIIcqgYqX3o?feature=share",
+      "status": "upcoming",
+      "category": "special"
     }
   ]
 }
