@@ -559,6 +559,53 @@
     }
   }
 
+  // ── SOUNDS (Web Audio API — no files needed) ─────────
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let audioCtx = null;
+
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new AudioCtx();
+    return audioCtx;
+  }
+
+  function playSuccess() {
+    try {
+      const ctx = getAudioCtx();
+      // Two ascending tones — cheerful beep
+      [[660, 0, 0.15], [880, 0.18, 0.25]].forEach(([freq, when, dur]) => {
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type      = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.4, ctx.currentTime + when);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + when + dur);
+        osc.start(ctx.currentTime + when);
+        osc.stop(ctx.currentTime + when + dur);
+      });
+    } catch(e) {}
+  }
+
+  function playFailure() {
+    try {
+      const ctx = getAudioCtx();
+      // Two descending tones — error buzz
+      [[300, 0, 0.2], [200, 0.22, 0.3]].forEach(([freq, when, dur]) => {
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type      = 'square';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.3, ctx.currentTime + when);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + when + dur);
+        osc.start(ctx.currentTime + when);
+        osc.stop(ctx.currentTime + when + dur);
+      });
+    } catch(e) {}
+  }
+
   // ── RESULT ────────────────────────────────────────────
   function showResult(data) {
     const { success, result, message, name, seat } = data;
@@ -577,6 +624,7 @@
         : 'Welcome! All seats in this booking checked in.';
       rMy.textContent     = 'ကြိုဆိုပါသည်။ ပွဲကြည့်နိုင်ပါသည်။';
       rBtn.className      = 'r-btn green';
+      playSuccess();
 
     } else if (result === 'already_checked_in') {
       resultOverlay.classList.add('invalid');
@@ -588,6 +636,7 @@
       rMsg.textContent    = 'This ticket has already been scanned. Entry denied.';
       rMy.textContent     = 'ဤ ticket ကို အသုံးပြုပြီးပါပြီ။ ဝင်ခွင့် မပြုပါ။';
       rBtn.className      = 'r-btn red';
+      playFailure();
 
     } else if (result === 'not_paid') {
       resultOverlay.classList.add('invalid');
@@ -599,6 +648,7 @@
       rMsg.textContent    = 'Payment not completed. Entry denied.';
       rMy.textContent     = 'ငွေပေးချေမှု မပြီးသေးပါ။ ဝင်ခွင့် မပြုပါ။';
       rBtn.className      = 'r-btn red';
+      playFailure();
 
     } else if (result === 'not_found' || result === 'invalid_qr') {
       resultOverlay.classList.add('invalid');
@@ -610,6 +660,7 @@
       rMsg.textContent    = 'Ticket not found. Check with organiser.';
       rMy.textContent     = 'Ticket မရှိပါ။ စီစဉ်သူနှင့် ဆက်သွယ်ပါ။';
       rBtn.className      = 'r-btn red';
+      playFailure();
 
     } else {
       resultOverlay.classList.add('warning');
@@ -621,6 +672,7 @@
       rMsg.textContent    = message || 'Something went wrong. Try again.';
       rMy.textContent     = 'ပြဿနာရှိသည်။ ထပ်မံကြိုးစားပါ။';
       rBtn.className      = 'r-btn yellow';
+      playFailure();
     }
 
     // Auto-dismiss after 5s
