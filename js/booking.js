@@ -1,6 +1,6 @@
 // ===== CONFIG =====
 // 🔁 Replaced Google Apps Script URL with Cloudflare Worker
-const WORKER_URL = 'https://lsm-bookings.YOUR_SUBDOMAIN.workers.dev'; // ← update after: wrangler deploy
+const WORKER_URL = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev/'; // ← update after: wrangler deploy
 
 const EVENTS_SOURCE  = 'data/live-events.json';
 const SEATMAP_SOURCE = 'data/seatmap.json';
