@@ -393,6 +393,9 @@
   let rafId       = null;
   let countdownId = null;
   let useDetector = false;
+  let scanActive  = false; // true when scanner screen is visible
+  let inFlight    = false; // prevents concurrent BarcodeDetector calls stacking up
+  let busyTimer   = null;  // safety reset if busy gets stuck
 
   // Elements
   const pinScreen      = document.getElementById('pinScreen');
@@ -458,8 +461,9 @@
   }
 
   // ── CAMERA ──────────────────────────────────────────
-  async function startCamera() {
-    // Use BarcodeDetector if available (iOS 17+, Chrome)
+
+  // Init BarcodeDetector once
+  async function initDetector() {
     if ('BarcodeDetector' in window) {
       try {
         const supported = await BarcodeDetector.getSupportedFormats();
@@ -467,72 +471,138 @@
           detector    = new BarcodeDetector({ formats: ['qr_code'] });
           useDetector = true;
         }
-      } catch (e) {
-        useDetector = false;
-      }
+      } catch { useDetector = false; }
     }
+  }
+  initDetector();
+
+  async function startCamera() {
+    camError.classList.remove('show');
+    stopCamera(); // clean up any existing stream first
 
     try {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { exact: 'environment' },
-          width:      { ideal: 1280 },
-          height:     { ideal: 720 }
-        }
+        video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
       });
     } catch {
-      // Fallback without exact constraint
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' }
-        });
-      } catch (err) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      } catch {
         camError.classList.add('show');
         return;
       }
     }
 
+    // Restart if track ends (iOS suspends stream on background)
+    stream.getVideoTracks().forEach(track => {
+      track.addEventListener('ended', () => {
+        if (scanActive) {
+          console.log('Track ended — restarting camera');
+          startCamera();
+        }
+      });
+    });
+
     videoEl.srcObject = stream;
-    await videoEl.play();
-    rafId = requestAnimationFrame(scanLoop);
+    try { await videoEl.play(); } catch { /* autoplay blocked — user will need to tap */ }
+
+    scanActive = true;
+    scheduleScanLoop();
   }
 
   function stopCamera() {
-    if (rafId)  { cancelAnimationFrame(rafId); rafId = null; }
+    scanActive = false;
+    if (rafId)  { clearTimeout(rafId); rafId = null; }
     if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
     videoEl.srcObject = null;
   }
 
-  // ── SCAN LOOP ────────────────────────────────────────
-  async function scanLoop() {
-    rafId = requestAnimationFrame(scanLoop);
+  // Use setTimeout instead of rAF so it keeps running even when tab is backgrounded on some devices
+  // rAF throttles/pauses on hidden tabs; setTimeout at 100ms (~10fps) is sufficient for QR scanning
+  function scheduleScanLoop() {
+    if (!scanActive) return;
+    rafId = setTimeout(async () => {
+      await scanTick();
+      scheduleScanLoop();
+    }, 100);
+  }
 
-    if (busy || videoEl.readyState < 2 || videoEl.videoWidth === 0) return;
+  async function scanTick() {
+    if (busy || inFlight) return;
+    if (videoEl.readyState < 2 || videoEl.videoWidth === 0) return;
+
+    // If video is paused/ended (happens after backgrounding on iOS), try to resume
+    if (videoEl.paused || videoEl.ended) {
+      try { await videoEl.play(); } catch { return; }
+    }
 
     let qrText = null;
+    inFlight = true;
 
-    if (useDetector && detector) {
-      // BarcodeDetector path — native, fast, works on iOS 17+
-      try {
+    try {
+      if (useDetector && detector) {
         const codes = await detector.detect(videoEl);
         if (codes.length > 0) qrText = codes[0].rawValue;
-      } catch { /* ignore per-frame errors */ }
-    } else {
-      // jsQR fallback — canvas-based
-      cvs.width  = videoEl.videoWidth;
-      cvs.height = videoEl.videoHeight;
-      ctx.drawImage(videoEl, 0, 0);
-      const img  = ctx.getImageData(0, 0, cvs.width, cvs.height);
-      const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
-      if (code) qrText = code.data;
-    }
+      } else {
+        cvs.width  = videoEl.videoWidth;
+        cvs.height = videoEl.videoHeight;
+        ctx.drawImage(videoEl, 0, 0);
+        const img  = ctx.getImageData(0, 0, cvs.width, cvs.height);
+        const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+        if (code) qrText = code.data;
+      }
+    } catch { /* ignore per-frame errors */ }
+
+    inFlight = false;
 
     if (qrText && qrText !== lastScanned) {
       lastScanned = qrText;
       busy        = true;
+
+      // Safety: force-reset busy after 10s in case something silently fails
+      clearTimeout(busyTimer);
+      busyTimer = setTimeout(() => {
+        console.warn('busy stuck — force reset');
+        busy        = false;
+        lastScanned = '';
+        loadingOverlay.classList.remove('show');
+      }, 10000);
+
       await processQR(qrText);
     }
   }
+
+  // ── VISIBILITY CHANGE — restart camera when app comes back to foreground
+  document.addEventListener('visibilitychange', async () => {
+    if (document.hidden) return;           // going to background — do nothing
+    if (!scanActive) return;               // scanner not open — do nothing
+
+    console.log('App foregrounded — checking camera...');
+
+    // Give iOS a moment to release the camera back to us
+    await new Promise(r => setTimeout(r, 600));
+
+    const track = stream && stream.getVideoTracks()[0];
+    const trackDead = !track || track.readyState === 'ended';
+
+    if (trackDead) {
+      console.log('Camera track dead — restarting');
+      await startCamera();
+    } else if (videoEl.paused) {
+      try { await videoEl.play(); } catch { await startCamera(); }
+    }
+  });
+
+  // ── PAGE SHOW — handles iOS Safari back/forward cache restore
+  window.addEventListener('pageshow', async (e) => {
+    if (!scanActive) return;
+    if (e.persisted) {
+      // Page was restored from bfcache — restart camera
+      console.log('Page restored from bfcache — restarting camera');
+      await new Promise(r => setTimeout(r, 400));
+      await startCamera();
+    }
+  });
 
   // ── VERIFY ────────────────────────────────────────────
   async function processQR(qrText) {
@@ -547,6 +617,8 @@
       loadingOverlay.classList.remove('show');
 
       if (data.result === 'invalid_pin') {
+        busy = false;
+        lastScanned = '';
         lock();
         setTimeout(() => { pinErr.textContent = 'Wrong PIN. Try again. / PIN မှားသည်။'; }, 300);
         return;
@@ -554,6 +626,7 @@
 
       showResult(data);
     } catch {
+      clearTimeout(busyTimer);
       loadingOverlay.classList.remove('show');
       showResult({ success: false, result: 'error', message: 'Network error. Check WiFi.' });
     }
@@ -688,12 +761,14 @@
 
   function dismiss() {
     clearInterval(countdownId);
+    clearTimeout(busyTimer);
     resultOverlay.className = '';
-    // Reset after cooldown so same QR isn't re-triggered immediately
+    // Short cooldown so same QR isn't immediately re-detected after dismiss
     setTimeout(() => {
       lastScanned = '';
       busy        = false;
-    }, COOLDOWN);
+      inFlight    = false;
+    }, 1500);
   }
 
   rBtn.addEventListener('click', dismiss);
