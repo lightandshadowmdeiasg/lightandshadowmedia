@@ -571,7 +571,10 @@
       rStatus.style.color = '#4ade80';
       rName.textContent   = name || '';
       rSeat.textContent   = seat ? `Seat ${seat}` : '';
-      rMsg.textContent    = 'Welcome! Enjoy the show.';
+      const remaining = data.remaining || 0;
+      rMsg.textContent    = remaining > 0
+        ? `Welcome! ${remaining} more seat${remaining > 1 ? 's' : ''} in this booking still need scanning.`
+        : 'Welcome! All seats in this booking checked in.';
       rMy.textContent     = 'ကြိုဆိုပါသည်။ ပွဲကြည့်နိုင်ပါသည်။';
       rBtn.className      = 'r-btn green';
 
