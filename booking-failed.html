@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Failed | Light & Shadow Media</title>
+  <link rel="icon" type="image/svg+xml" href="assets/images/logos/favicon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <style>
+    .status-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl) var(--space-md);
+    }
+
+    .status-card {
+      background: var(--color-bg-secondary);
+      border: 1px solid rgba(220, 80, 80, 0.25);
+      border-radius: 12px;
+      padding: var(--space-xl);
+      max-width: 560px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .status-icon {
+      font-size: 4rem;
+      margin-bottom: var(--space-md);
+      display: block;
+    }
+
+    .status-title {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      color: #e05555;
+      margin-bottom: var(--space-sm);
+    }
+
+    .status-subtitle {
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-lg);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .info-box {
+      background: var(--color-bg-primary);
+      border-radius: 8px;
+      padding: var(--space-md);
+      margin-bottom: var(--space-lg);
+      text-align: left;
+    }
+
+    .info-box p {
+      color: var(--color-text-secondary);
+      font-size: 0.88rem;
+      margin: 0 0 8px;
+      line-height: 1.6;
+    }
+
+    .info-box p:last-child { margin-bottom: 0; }
+
+    .info-box strong { color: var(--color-gold); }
+
+    .burmese-note {
+      background: var(--color-bg-primary);
+      border-radius: 8px;
+      padding: var(--space-md);
+      margin-bottom: var(--space-lg);
+      text-align: left;
+    }
+
+    .burmese-note p {
+      color: var(--color-text-secondary);
+      font-size: 0.85rem;
+      margin: 0 0 6px;
+      line-height: 1.6;
+    }
+
+    .burmese-note p:last-child { margin-bottom: 0; }
+
+    .btn-group {
+      display: flex;
+      gap: var(--space-sm);
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .booking-ref {
+      background: var(--color-bg-primary);
+      border: 1px solid rgba(220,80,80,0.2);
+      border-radius: 8px;
+      padding: var(--space-md);
+      margin-bottom: var(--space-lg);
+    }
+
+    .booking-ref-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #e05555;
+      margin-bottom: 6px;
+    }
+
+    .booking-ref-value {
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      color: var(--color-text-secondary);
+      letter-spacing: 0.05em;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="film-grain"></div>
+
+  <nav class="navbar">
+    <div class="container">
+      <ul class="nav-links nav-left">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="live-events.html">Live Events</a></li>
+      </ul>
+      <ul class="nav-links nav-right">
+        <li><a href="corporate.html">Corporate</a></li>
+        <li><a href="film.html">Film</a></li>
+      </ul>
+      <a href="index.html" class="logo">
+        <span class="logo-text">Light <span class="ampersand">&</span> Shadow</span>
+        <span class="logo-tagline">Media</span>
+      </a>
+      <div class="menu-toggle"><span></span><span></span><span></span></div>
+    </div>
+    <div class="nav-mobile">
+      <a href="index.html">Home</a>
+      <a href="live-events.html">Live Events</a>
+      <a href="corporate.html">Corporate</a>
+      <a href="film.html">Film</a>
+    </div>
+  </nav>
+
+  <div class="status-page">
+    <div class="status-card">
+
+      <span class="status-icon">❌</span>
+      <h1 class="status-title">Payment Not Completed</h1>
+      <p class="status-subtitle">
+        Your payment was not completed or was cancelled.<br>
+        <strong style="color: var(--color-gold);">Your seat selection has been held</strong> — you can try again below.
+      </p>
+
+      <!-- Show ref if available -->
+      <div class="booking-ref" id="refBox" style="display:none;">
+        <div class="booking-ref-label">Your Booking Reference</div>
+        <div class="booking-ref-value" id="refDisplay">—</div>
+        <p style="font-size:0.75rem;color:var(--color-text-muted);margin:8px 0 0;">
+          Keep this reference and contact us if you need assistance.
+        </p>
+      </div>
+
+      <div class="info-box">
+        <p><strong>Common reasons for failure:</strong></p>
+        <p>• Payment was cancelled or timed out</p>
+        <p>• Card was declined — try a different payment method</p>
+        <p>• Network issue during checkout</p>
+        <p style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.05);">
+          <strong>Need help?</strong> Message us on ShweTV Messenger with your booking reference and we'll assist you.
+        </p>
+      </div>
+
+      <div class="burmese-note">
+        <p><strong style="color: #e05555;">❌ ငွေပေးချေမှု မအောင်မြင်ပါ။</strong></p>
+        <p>ငွေပေးချေမှု ပယ်ဖျက်ခြင်း သို့မဟုတ် ပြဿနာရှိနေပါသည်။</p>
+        <p>သင်၏ ခုံနေရာ ကြိုတင်မှတ်ပုံတင်မှု ရှိနေသေးသည်။ ထပ်မံ ကြိုးစားကြည့်ပါ။</p>
+        <p>အကူအညီ လိုအပ်ပါက ShweTV Messenger မှတစ်ဆင့် ဆက်သွယ်ပေးပါ။</p>
+      </div>
+
+      <div class="btn-group">
+        <a href="live-events.html" class="btn btn-primary">Try Again</a>
+        <a href="index.html#contact" class="btn btn-secondary">Contact Us</a>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-logo">
+          <svg class="logo-icon" viewBox="0 0 48 48" fill="none">
+            <circle cx="24" cy="24" r="22" stroke="#c9a227" stroke-width="1.5"/>
+            <circle cx="24" cy="24" r="16" stroke="#f5f5f7" stroke-width="1"/>
+            <circle cx="24" cy="24" r="8" stroke="#c9a227" stroke-width="1.5"/>
+          </svg>
+          <span class="logo-text">Light <span class="ampersand">&</span> Shadow</span>
+        </div>
+        <ul class="footer-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="live-events.html">Live Events</a></li>
+          <li><a href="index.html#contact">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Light & Shadow Media. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const params  = new URLSearchParams(window.location.search);
+      const ref     = params.get('ref') || '';
+      const refBox  = document.getElementById('refBox');
+      const refEl   = document.getElementById('refDisplay');
+
+      if (ref && refBox && refEl) {
+        refEl.textContent = ref;
+        refBox.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

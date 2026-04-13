@@ -421,36 +421,42 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch(WORKER_URL, { method: 'POST', body: formData })
       .then(res => res.json().catch(() => null))
       .then(data => {
-        if (!data || typeof data.success === 'undefined') {
-          setBookingStatus('✅ Booking submitted! We will contact you soon.', 'success');
-        } else if (data.success) {
-          setBookingStatus(
-            'Booking နှင့် ကိုယ်ရေး အချက်အလက် များကို လက်ခံရှိပါသည်။<br><br>' +
-            '<b>(1)</b> PayNow &nbsp;to&nbsp; UEN<br>' +
-            '&nbsp;&nbsp;&nbsp;&nbsp;<b>53384102W</b><br>' +
-            '&nbsp;&nbsp;&nbsp;&nbsp;LIGHT AND SHADOW MEDIA. သို့ ကျသင့်ငွေကိုလွှဲပေးပါ။<br><br>' +
-            '<b>(2)</b> Add Reference နေရာတွင် Seat Number (ခုံနံပါတ်)ကိုထည့်ပေးပါ။<br><br>' +
-            '<b>(3)</b> payment screenshot ကို ShweTV messenger သို့ ပို့ထားပေးပါ။<br><br>' +
-            '<b>၂၄ နာရီအတွင်း E-ticket ပို့ပေးပါမည်။</b>',
-            'success'
-          );
-        } else if (data.conflict) {
-          const taken = (data.conflictSeats || []).join(', ');
-          setBookingStatus(`❌ These seats were just booked: ${taken}. Please choose others.`, 'error');
-        } else {
-          setBookingStatus('❌ Booking failed. Please try again.', 'error');
+        if (!data) {
+          setBookingStatus('❌ Something went wrong. Please try again.', 'error');
+          submitBtn.disabled    = false;
+          submitBtn.textContent = 'Confirm Booking';
+          return;
         }
 
-        selectedSeats.clear();
-        selectedSeatsInput.value = '';
-        bookingForm.reset();
-        loadSeatMap();
+        if (data.conflict) {
+          const taken = (data.conflictSeats || []).join(', ');
+          setBookingStatus(`❌ These seats were just booked: ${taken}. Please choose others.`, 'error');
+          submitBtn.disabled    = false;
+          submitBtn.textContent = 'Confirm Booking';
+          selectedSeats.clear();
+          selectedSeatsInput.value = '';
+          bookingForm.reset();
+          loadSeatMap();
+          return;
+        }
+
+        if (data.success && data.paymentUrl) {
+          // Seats reserved — redirect to HitPay checkout
+          setBookingStatus('Redirecting to payment…', 'info', 'Almost there');
+          setTimeout(() => {
+            window.location.href = data.paymentUrl;
+          }, 800);
+          return;
+        }
+
+        // Fallback error
+        setBookingStatus(data.error || '❌ Booking failed. Please try again.', 'error');
+        submitBtn.disabled    = false;
+        submitBtn.textContent = 'Confirm Booking';
       })
       .catch(err => {
         console.error('Booking error:', err);
         setBookingStatus('Network error. Please try again.', 'error');
-      })
-      .finally(() => {
         submitBtn.disabled    = false;
         submitBtn.textContent = 'Confirm Booking';
       });
