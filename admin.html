@@ -223,11 +223,18 @@
   }
 
   async function confirmBooking(btn) {
-    const eventId = btn.dataset.eventid;
-    const ref     = btn.dataset.ref;
-    const name    = btn.dataset.name;
-    const safeRef = ref.replace(/[^a-zA-Z0-9_-]/g,'_');
+    const eventId = btn.getAttribute('data-eventid');
+    const ref     = btn.getAttribute('data-ref');
+    const name    = btn.getAttribute('data-name');
+    const safeRef = (ref || '').replace(/[^a-zA-Z0-9_-]/g,'_');
     const card    = document.getElementById('card-' + safeRef);
+
+    console.log('Confirming:', { eventId, ref, name });
+
+    if (!eventId || !ref) {
+      showToast('Missing booking data. Please refresh.', 'error');
+      return;
+    }
 
     btn.disabled = true; btn.textContent = 'Sending...';
     try {
