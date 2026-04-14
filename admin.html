@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | Light & Shadow Media</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { background: #0a0a0c; color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; min-height: 100vh; }
+
+    #loginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .login-card { background: #111116; border: 1px solid rgba(201,162,39,0.2); border-radius: 12px; padding: 40px 32px; width: 100%; max-width: 400px; text-align: center; }
+    .login-logo { font-size: 1rem; letter-spacing: 0.2em; color: #c9a227; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
+    .login-sub  { font-size: 0.75rem; color: #888; margin-bottom: 32px; }
+    .login-card label { display: block; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: #c9a227; margin-bottom: 8px; text-align: left; }
+    .login-card input { width: 100%; padding: 12px 16px; background: #1a1a1f; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #f5f5f7; font-size: 1rem; margin-bottom: 20px; outline: none; }
+    .login-card input:focus { border-color: #c9a227; }
+    .btn-gold { width: 100%; padding: 14px; background: #c9a227; color: #000; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: bold; letter-spacing: 0.05em; cursor: pointer; }
+    .btn-gold:hover { background: #a07d1a; }
+    .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
+    .login-error { font-size: 0.82rem; color: #f87171; margin-top: 12px; min-height: 20px; }
+
+    #adminScreen { display: none; }
+    .admin-header { background: #111116; border-bottom: 1px solid rgba(201,162,39,0.2); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .admin-title { font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; color: #c9a227; font-weight: bold; }
+    .admin-actions { display: flex; gap: 10px; align-items: center; }
+    .btn-sm { padding: 8px 16px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer; border: none; letter-spacing: 0.03em; }
+    .btn-refresh { background: rgba(201,162,39,0.15); color: #c9a227; border: 1px solid rgba(201,162,39,0.3); }
+    .btn-logout  { background: rgba(255,255,255,0.05); color: #888; border: 1px solid rgba(255,255,255,0.1); }
+
+    .admin-body { padding: 24px; max-width: 1100px; margin: 0 auto; }
+    .stats-bar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .stat-pill { background: #111116; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px 20px; text-align: center; flex: 1; min-width: 120px; }
+    .stat-num   { font-size: 1.8rem; font-weight: bold; color: #c9a227; line-height: 1; }
+    .stat-label { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-top: 4px; }
+
+    .event-group { margin-bottom: 32px; }
+    .event-group-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(201,162,39,0.2); flex-wrap: wrap; }
+    .event-group-title { font-size: 1rem; font-weight: bold; color: #f5f5f7; }
+    .event-group-date  { font-size: 0.8rem; color: #888; }
+    .event-badge { font-size: 0.7rem; background: rgba(201,162,39,0.15); color: #c9a227; border-radius: 20px; padding: 3px 10px; letter-spacing: 0.05em; }
+
+    .booking-card { background: #111116; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 16px 20px; margin-bottom: 10px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .booking-card:hover { border-color: rgba(201,162,39,0.2); }
+    .booking-info    { flex: 1; min-width: 200px; }
+    .booking-name    { font-size: 1rem; font-weight: bold; color: #f5f5f7; margin-bottom: 2px; }
+    .booking-contact { font-size: 0.8rem; color: #888; margin-bottom: 6px; }
+    .booking-seats   { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; }
+    .seat-chip  { font-size: 0.75rem; background: #1e3a5f; color: #f5f5f7; border-radius: 4px; padding: 3px 8px; font-weight: bold; }
+    .booking-meta  { text-align: right; min-width: 100px; }
+    .booking-total { font-size: 1.2rem; font-weight: bold; color: #c9a227; margin-bottom: 2px; }
+    .booking-time  { font-size: 0.72rem; color: #666; }
+    .booking-ref   { font-size: 0.68rem; color: #555; font-family: monospace; margin-top: 2px; word-break: break-all; }
+
+    .confirm-btn { padding: 10px 20px; background: #1a472a; color: #4ade80; border: 1px solid rgba(74,222,128,0.3); border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; white-space: nowrap; min-width: 160px; }
+    .confirm-btn:hover    { background: #2d6a4f; }
+    .confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .confirm-btn.done     { background: rgba(74,222,128,0.1); color: #4ade80; border-color: rgba(74,222,128,0.2); cursor: default; }
+    .confirm-btn.err      { background: rgba(248,113,113,0.1); color: #f87171; border-color: rgba(248,113,113,0.2); }
+
+    .empty-state { text-align: center; padding: 60px 24px; color: #555; }
+    .empty-icon  { font-size: 3rem; margin-bottom: 12px; }
+    .empty-text  { font-size: 0.9rem; }
+
+    .spinner-wrap { text-align: center; padding: 60px; color: #555; font-size: 0.85rem; }
+    .spinner { width: 36px; height: 36px; border: 3px solid rgba(201,162,39,0.2); border-top-color: #c9a227; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1a1a1f; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 24px; font-size: 0.875rem; transition: transform 0.25s; z-index: 200; white-space: nowrap; }
+    #toast.show    { transform: translateX(-50%) translateY(0); }
+    #toast.success { border-color: rgba(74,222,128,0.4); color: #4ade80; }
+    #toast.error   { border-color: rgba(248,113,113,0.4); color: #f87171; }
+
+    @media (max-width: 600px) {
+      .booking-card { flex-direction: column; align-items: flex-start; }
+      .booking-meta { text-align: left; }
+      .confirm-btn  { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">Light &amp; Shadow Media</div>
+    <div class="login-sub">Admin &mdash; Payment Confirmation</div>
+    <label for="adminPass">Admin Password</label>
+    <input type="password" id="adminPass" placeholder="Enter admin password" autocomplete="current-password">
+    <button class="btn-gold" id="loginBtn">Login</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<div id="adminScreen">
+  <div class="admin-header">
+    <div class="admin-title">Bookings &mdash; Pending Payment</div>
+    <div class="admin-actions">
+      <button class="btn-sm btn-refresh" id="refreshBtn">Refresh</button>
+      <button class="btn-sm btn-logout"  id="logoutBtn">Logout</button>
+    </div>
+  </div>
+  <div class="admin-body">
+    <div class="stats-bar"    id="statsBar"></div>
+    <div id="bookingsList"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const WORKER = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev';
+  let token = '';
+
+  const loginScreen  = document.getElementById('loginScreen');
+  const adminScreen  = document.getElementById('adminScreen');
+  const loginError   = document.getElementById('loginError');
+  const bookingsList = document.getElementById('bookingsList');
+  const statsBar     = document.getElementById('statsBar');
+  const toast        = document.getElementById('toast');
+
+  // LOGIN
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  document.getElementById('adminPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+  async function doLogin() {
+    const pass = document.getElementById('adminPass').value.trim();
+    if (!pass) { loginError.textContent = 'Enter password.'; return; }
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true; btn.textContent = 'Checking...';
+    loginError.textContent = '';
+    try {
+      const res  = await fetch(WORKER + '/admin-bookings', { headers: { 'X-Admin-Token': pass } });
+      const data = await res.json();
+      if (res.status === 401 || !data.success) { loginError.textContent = 'Wrong password.'; btn.disabled = false; btn.textContent = 'Login'; return; }
+      token = pass;
+      loginScreen.style.display = 'none';
+      adminScreen.style.display = 'block';
+      render(data);
+    } catch(e) { loginError.textContent = 'Network error.'; }
+    btn.disabled = false; btn.textContent = 'Login';
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    token = '';
+    loginScreen.style.display = 'flex';
+    adminScreen.style.display = 'none';
+    document.getElementById('adminPass').value = '';
+    loginError.textContent = '';
+  });
+
+  document.getElementById('refreshBtn').addEventListener('click', loadBookings);
+
+  async function loadBookings() {
+    bookingsList.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div>Loading...</div>';
+    statsBar.innerHTML = '';
+    try {
+      const res  = await fetch(WORKER + '/admin-bookings', { headers: { 'X-Admin-Token': token } });
+      if (res.status === 401) { document.getElementById('logoutBtn').click(); return; }
+      const data = await res.json();
+      render(data);
+    } catch(e) { showToast('Network error.', 'error'); }
+  }
+
+  function render(data) {
+    const { pending, eventTitles } = data;
+    const totalAmt = pending.reduce((s, b) => s + Number(b.total || 0), 0);
+    statsBar.innerHTML = `
+      <div class="stat-pill"><div class="stat-num">${pending.length}</div><div class="stat-label">Pending</div></div>
+      <div class="stat-pill"><div class="stat-num">SGD $${totalAmt.toFixed(0)}</div><div class="stat-label">Total Pending</div></div>
+      <div class="stat-pill"><div class="stat-num">${[...new Set(pending.map(b=>b.eventId))].length}</div><div class="stat-label">Events</div></div>
+    `;
+
+    if (!pending.length) {
+      bookingsList.innerHTML = '<div class="empty-state"><div class="empty-icon">&#10003;</div><div class="empty-text">No pending payments. All confirmed.</div></div>';
+      return;
+    }
+
+    const groups = {};
+    pending.forEach(b => { if (!groups[b.eventId]) groups[b.eventId] = []; groups[b.eventId].push(b); });
+
+    let html = '';
+    Object.entries(groups).forEach(([eid, bookings]) => {
+      const ev    = eventTitles[eid] || {};
+      const title = ev.title || eid;
+      const date  = ev.date  || '';
+      html += `<div class="event-group">
+        <div class="event-group-header">
+          <div class="event-group-title">${esc(title)}</div>
+          ${date ? `<div class="event-group-date">${esc(date)}</div>` : ''}
+          <div class="event-badge">${bookings.length} pending</div>
+        </div>`;
+
+      bookings.forEach(b => {
+        const seats = b.seats.split(',').map(s=>s.trim()).filter(Boolean);
+        const safeRef = b.ref.replace(/[^a-zA-Z0-9_-]/g,'_');
+        const safeEid = eid.replace(/[^a-zA-Z0-9_-]/g,'_');
+        let time = '';
+        try { time = new Date(b.timestamp).toLocaleString('en-SG',{timeZone:'Asia/Singapore',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); } catch(e){}
+        html += `<div class="booking-card" id="card-${safeRef}">
+          <div class="booking-info">
+            <div class="booking-name">${esc(b.name)}</div>
+            <div class="booking-contact">${esc(b.email)} &nbsp;&middot;&nbsp; ${esc(b.phone)}</div>
+            <div class="booking-seats">${seats.map(s=>`<span class="seat-chip">${esc(s)}</span>`).join('')}</div>
+            <div class="booking-ref">${esc(b.ref)}</div>
+          </div>
+          <div class="booking-meta">
+            <div class="booking-total">SGD $${esc(b.total)}</div>
+            <div class="booking-time">${time}</div>
+          </div>
+          <button class="confirm-btn" id="btn-${safeRef}" onclick="confirm('${safeEid}','${safeRef}','${esc(b.ref)}','${esc(b.name)}')">
+            &#10003; Confirm &amp; Send Ticket
+          </button>
+        </div>`;
+      });
+      html += '</div>';
+    });
+    bookingsList.innerHTML = html;
+  }
+
+  async function confirm(safeEid, safeRef, realRef, name) {
+    const btn  = document.getElementById('btn-' + safeRef);
+    const card = document.getElementById('card-' + safeRef);
+    const realEid = safeEid.replace(/_/g, '-');
+    btn.disabled = true; btn.textContent = 'Sending...';
+    try {
+      const res  = await fetch(WORKER + '/admin-confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
+        body: JSON.stringify({ eventId: realEid, ref: realRef })
+      });
+      const data = await res.json();
+      if (data.success) {
+        btn.classList.add('done'); btn.textContent = 'Ticket Sent';
+        card.style.opacity = '0.45';
+        showToast('Ticket sent to ' + name, 'success');
+      } else {
+        btn.classList.add('err'); btn.textContent = 'Failed';
+        btn.disabled = false;
+        showToast(data.error || 'Something went wrong.', 'error');
+      }
+    } catch(e) {
+      btn.classList.add('err'); btn.textContent = 'Network error';
+      btn.disabled = false;
+      showToast('Network error.', 'error');
+    }
+  }
+
+  let toastTimer;
+  function showToast(msg, type) {
+    toast.textContent = msg; toast.className = 'show ' + (type||'success');
+    clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ toast.className=''; }, 3500);
+  }
+
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
