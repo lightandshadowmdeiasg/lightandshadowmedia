@@ -160,6 +160,20 @@
     .sm-preview .zone-chip{display:inline-block;border-radius:4px;padding:2px 8px;font-size:.72rem;font-weight:700;margin:2px}
     .sm-seat{width:18px;height:18px;border-radius:3px;border:1px solid #444;font-size:.55rem;font-weight:700;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .1s;line-height:1}
     .sm-seat:hover{opacity:.75}
+    .sm-seat.selected{outline:2px solid #fff;outline-offset:1px}
+    .seat-popup{display:none;position:fixed;z-index:500;background:#1a1a1f;border:1px solid rgba(201,162,39,.3);border-radius:12px;padding:16px;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+    .seat-popup.show{display:block}
+    .seat-popup-title{font-size:.8rem;font-weight:700;color:var(--gold);margin-bottom:12px;letter-spacing:.05em}
+    .seat-popup-zones{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+    .zone-pick-btn{padding:6px 12px;border-radius:6px;font-size:.78rem;font-weight:700;cursor:pointer;border:2px solid transparent;opacity:.7}
+    .zone-pick-btn.active{border-color:#fff;opacity:1}
+    .seat-popup-state{display:flex;gap:6px;margin-bottom:12px}
+    .state-btn{flex:1;padding:8px;border-radius:6px;font-size:.78rem;font-weight:700;cursor:pointer;border:none;text-align:center}
+    .state-avail{background:rgba(74,222,128,.15);color:#4ade80}
+    .state-avail.active{background:rgba(74,222,128,.4)}
+    .state-unavail{background:rgba(248,113,113,.15);color:#f87171}
+    .state-unavail.active{background:rgba(248,113,113,.4)}
+    .seat-popup-close{width:100%;padding:7px;background:rgba(255,255,255,.05);color:var(--muted);border:1px solid rgba(255,255,255,.1);border-radius:6px;font-size:.78rem;cursor:pointer}
 
     @media(max-width:600px){
       .booking-card,.ev-header{flex-direction:column}
@@ -925,8 +939,8 @@ function renderSeatmapEditor(eventId, zones, rowRanges, overrides) {
         <div style="display:flex;gap:6px;flex-wrap:wrap;" id="smLegend"></div>
       </div>
       <div style="font-size:.72rem;color:var(--muted);margin-bottom:10px;">
-        Left-click = cycle zone &nbsp;|&nbsp; Right-click = toggle unavailable &nbsp;|&nbsp;
-        <span style="color:#f87171;">&#x2715; = Unavailable</span>
+        Tap any seat to change its zone or mark it unavailable.
+        <span style="color:#f87171;"> &#x2715; = Unavailable</span>
       </div>
       <div style="overflow-x:auto;">
         <div id="smGrid" style="display:inline-block;min-width:100%;"></div>
@@ -1022,29 +1036,81 @@ function renderSmGrid() {
   grid.innerHTML = html;
 }
 
-function smCycleZone(code) {
-  const zones = getZoneNames();
-  if (!zones.length) { showToast('Define zones first.', 'err'); return; }
+let _popupCode = null;
 
-  const ov = smOverrides[code] || {};
-  const defaultZone = SEATMAP_TEMPLATE.data[code[0]]?.find(s => s.code === code)?.zone || zones[0].name;
-  const curZone = (ov.zone || defaultZone).toUpperCase();
+function openSeatPopup(e, code) {
+  e.stopPropagation();
+  _popupCode = code;
 
-  const idx = zones.findIndex(z => z.name === curZone);
-  const nextZone = zones[(idx + 1) % zones.length].name;
+  const zones   = getZoneNames();
+  const ov      = smOverrides[code] || {};
+  const defCell = SEATMAP_TEMPLATE.data[code[0]]?.find(s => s.code === code);
+  const curZone = (ov.zone  || (defCell && defCell.zone) || (zones[0] && zones[0].name) || '').toUpperCase();
+  const curState= ov.state  || (defCell && defCell.state) || 'AVAILABLE';
 
-  smOverrides[code] = { zone: nextZone, state: ov.state || 'AVAILABLE' };
-  updateSeatBtn(code);
+  // Build popup HTML
+  let zoneBtns = zones.map(z => {
+    const active = z.name.toUpperCase() === curZone ? ' active' : '';
+    return `<button class="zone-pick-btn${active}"
+      style="background:${z.color};color:#000;"
+      onclick="smSetZone('${z.name}')">${esc(z.name)}<br><span style="font-size:.65rem;font-weight:400;">$${z.price}</span></button>`;
+  }).join('');
+
+  const popup = document.getElementById('seatPopup');
+  popup.innerHTML = `
+    <div class="seat-popup-title">Seat ${esc(code)}</div>
+    <div class="seat-popup-zones">${zoneBtns}</div>
+    <div class="seat-popup-state">
+      <button class="state-btn state-avail${curState==='AVAILABLE'?' active':''}" onclick="smSetState('AVAILABLE')">&#10003; Available</button>
+      <button class="state-btn state-unavail${curState==='UNAVAILABLE'?' active':''}" onclick="smSetState('UNAVAILABLE')">&#x2715; Unavailable</button>
+    </div>
+    <button class="seat-popup-close" onclick="closeSeatPopup()">Done</button>
+  `;
+
+  // Position popup near the seat button, but keep on screen
+  const btn  = e.currentTarget || e.target;
+  const rect = btn.getBoundingClientRect();
+  const pw   = 220, ph = 180;
+  let left = rect.left + window.scrollX;
+  let top  = rect.bottom + window.scrollY + 4;
+  if (left + pw > window.innerWidth - 8)  left = window.innerWidth - pw - 8;
+  if (top  + ph > window.innerHeight + window.scrollY - 8) top = rect.top + window.scrollY - ph - 4;
+  popup.style.left = left + 'px';
+  popup.style.top  = top  + 'px';
+  popup.classList.add('show');
+
+  // Highlight selected seat
+  document.querySelectorAll('.sm-seat.selected').forEach(s => s.classList.remove('selected'));
+  btn.classList.add('selected');
 }
 
-function smToggleUnavail(e, code) {
-  e.preventDefault();
-  const ov = smOverrides[code] || {};
-  const curState = ov.state || 'AVAILABLE';
-  const newState = curState === 'UNAVAILABLE' ? 'AVAILABLE' : 'UNAVAILABLE';
-  const defaultZone = SEATMAP_TEMPLATE.data[code[0]]?.find(s => s.code === code)?.zone || '';
-  smOverrides[code] = { zone: ov.zone || defaultZone, state: newState };
-  updateSeatBtn(code);
+function smSetZone(zoneName) {
+  if (!_popupCode) return;
+  const ov = smOverrides[_popupCode] || {};
+  const defCell = SEATMAP_TEMPLATE.data[_popupCode[0]]?.find(s => s.code === _popupCode);
+  smOverrides[_popupCode] = { zone: zoneName.toUpperCase(), state: ov.state || (defCell && defCell.state) || 'AVAILABLE' };
+  updateSeatBtn(_popupCode);
+  // Update active button in popup
+  document.querySelectorAll('.zone-pick-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim().startsWith(zoneName));
+  });
+}
+
+function smSetState(state) {
+  if (!_popupCode) return;
+  const ov = smOverrides[_popupCode] || {};
+  const defCell = SEATMAP_TEMPLATE.data[_popupCode[0]]?.find(s => s.code === _popupCode);
+  smOverrides[_popupCode] = { zone: ov.zone || (defCell && defCell.zone) || '', state };
+  updateSeatBtn(_popupCode);
+  document.querySelectorAll('.state-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.includes(state === 'AVAILABLE' ? 'Available' : 'Unavailable'));
+  });
+}
+
+function closeSeatPopup() {
+  document.getElementById('seatPopup').classList.remove('show');
+  document.querySelectorAll('.sm-seat.selected').forEach(s => s.classList.remove('selected'));
+  _popupCode = null;
 }
 
 function updateSeatBtn(code) {
@@ -1128,6 +1194,15 @@ function showToast(msg,type){
 function esc(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+</script>
+<div class="seat-popup" id="seatPopup"></div>
+<script>
+  document.addEventListener('click', e => {
+    const popup = document.getElementById('seatPopup');
+    if (popup && popup.classList.contains('show') && !popup.contains(e.target) && !e.target.classList.contains('sm-seat')) {
+      closeSeatPopup();
+    }
+  });
 </script>
 </body>
 </html>
