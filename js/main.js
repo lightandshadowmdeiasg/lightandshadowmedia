@@ -470,7 +470,7 @@ const ProjectLoader = {
     
         // Show booking button only on the Live Events page
         const isLiveEvents = this.source && this.source.indexOf('live-events') !== -1;
-        const isBookable   = isLiveEvents && item.bookingStatus === 'open';
+        const isBookable   = isLiveEvents && (item.bookingStatus === 'open' || (!item.bookingStatus && item.status === 'upcoming'));
 
         const bookingButton = isBookable ? `
                 <div class="project-actions" style="margin-top: 1rem;">
