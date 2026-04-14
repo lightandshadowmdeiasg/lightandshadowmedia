@@ -174,66 +174,28 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // Apply per-event zone/price/color/unavailable overrides onto base seatmap
-  function applySeatmapOverrides(base, overrides) {
-    // Deep clone base
+  // Apply per-event zone/state overrides onto base seatmap.json
+  function applySeatmapOverrides(base, config) {
     const result = JSON.parse(JSON.stringify(base));
 
-    // Override zones if defined
-    if (overrides.zones && Object.keys(overrides.zones).length) {
-      result.zones = overrides.zones;
+    // Override zone definitions (price + color)
+    if (config.zones && Object.keys(config.zones).length) {
+      result.zones = config.zones;
     }
 
-    // Build row-to-zone map from rowRanges
-    const rowZoneMap = {};
-    if (overrides.rowRanges && overrides.rowRanges.length) {
-      overrides.rowRanges.forEach(r => {
-        const fromCode = r.from.charCodeAt(0);
-        const toCode   = (r.to || r.from).charCodeAt(0);
-        for (let c = fromCode; c <= toCode; c++) {
-          rowZoneMap[String.fromCharCode(c)] = r.zone;
-        }
-      });
-    }
-
-    // Apply row zones and individual overrides to SEATPLAN
-    if (result.SEATPLAN) {
+    // Apply individual seat overrides
+    if (config.overrides && Object.keys(config.overrides).length) {
       Object.keys(result.SEATPLAN).forEach(rowKey => {
-        if (!/^[A-Z]$/.test(rowKey)) return;
-        const rowZone = rowZoneMap[rowKey];
+        if (!/^[A-Z]$/.test(rowKey.trim())) return;
         result.SEATPLAN[rowKey] = result.SEATPLAN[rowKey].map(cell => {
-          if (!cell || cell === 'AISLE' || (typeof cell === 'object' && cell && cell.type)) return cell;
-
-          let seatNum, currentZone, currentState;
-          if (typeof cell === 'object' && cell && cell.seat != null) {
-            seatNum = String(cell.seat);
-            currentZone  = cell.zone  || null;
-            currentState = cell.state || 'AVAILABLE';
-          } else {
-            seatNum = String(cell);
-            currentZone  = null;
-            currentState = 'AVAILABLE';
+          if (!cell || cell === 'AISLE') return cell;
+          if (typeof cell === 'object' && cell.type)  return cell;
+          if (typeof cell === 'object' && cell.seat != null) {
+            const code = `${rowKey.trim()}${cell.seat}`;
+            const ov   = config.overrides[code];
+            if (ov) return { ...cell, zone: ov.zone || cell.zone, state: ov.state || cell.state || 'AVAILABLE' };
           }
-
-          const seatCode = `${rowKey}${seatNum}`;
-
-          // Check individual override first
-          if (overrides.overrides && overrides.overrides[seatCode]) {
-            const ov = overrides.overrides[seatCode];
-            return {
-              seat:  Number(seatNum),
-              zone:  ov.zone || rowZone || currentZone,
-              state: ov.state || currentState
-            };
-          }
-
-          // Apply row zone if defined
-          if (rowZone) {
-            return { seat: Number(seatNum), zone: rowZone, state: currentState };
-          }
-
-          // No override — return as object for consistency
-          return typeof cell === 'object' ? cell : { seat: Number(seatNum), zone: currentZone, state: currentState };
+          return cell;
         });
       });
     }
