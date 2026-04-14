@@ -1,6 +1,6 @@
 // ===== CONFIG =====
 // 🔁 Replaced Google Apps Script URL with Cloudflare Worker
-const WORKER_URL = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev/'; // ← update after: wrangler deploy
+const WORKER_URL = 'https://lsm-bookings.YOUR_SUBDOMAIN.workers.dev'; // ← update after: wrangler deploy
 
 const EVENTS_SOURCE  = 'data/live-events.json';
 const SEATMAP_SOURCE = 'data/seatmap.json';
@@ -441,15 +441,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (data.success && data.paymentUrl) {
-          // Seats reserved — redirect to HitPay checkout
+          // HitPay available — redirect to checkout
           setBookingStatus('Redirecting to payment…', 'info', 'Almost there');
-          setTimeout(() => {
-            window.location.href = data.paymentUrl;
-          }, 800);
+          setTimeout(() => { window.location.href = data.paymentUrl; }, 800);
           return;
         }
 
-        // Fallback error
+        if (data.success && data.paynow) {
+          // HitPay unavailable — PayNow manual flow, confirmation email already sent
+          setBookingStatus(
+            'Booking လက်ခံရှိပါသည်။ ကျေးဇူးပြု၍ email စစ်ဆေးပါ။<br><br>' +
+            '<b>(1)</b> PayNow to UEN &nbsp;<b>53384102W</b><br>' +
+            '&nbsp;&nbsp;&nbsp;&nbsp;LIGHT AND SHADOW MEDIA သို့ ကျသင့်ငွေ လွှဲပေးပါ။<br><br>' +
+            '<b>(2)</b> Reference တွင် Seat Number ထည့်ပါ။<br><br>' +
+            '<b>(3)</b> Payment screenshot ကို ShweTV Messenger ပို့ပါ။<br><br>' +
+            '<b>၂၄ နာရီအတွင်း E-ticket ပို့ပေးပါမည်။</b>',
+            'success'
+          );
+          selectedSeats.clear();
+          selectedSeatsInput.value = '';
+          bookingForm.reset();
+          loadSeatMap();
+          return;
+        }
+
+        // Error
         setBookingStatus(data.error || '❌ Booking failed. Please try again.', 'error');
         submitBtn.disabled    = false;
         submitBtn.textContent = 'Confirm Booking';
