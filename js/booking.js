@@ -1,9 +1,10 @@
 // ===== CONFIG =====
 // 🔁 Replaced Google Apps Script URL with Cloudflare Worker
-const WORKER_URL = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev/'; // ← update after: wrangler deploy
+const WORKER_URL = 'https://lsm-bookings.YOUR_SUBDOMAIN.workers.dev'; // ← update after: wrangler deploy
 
 const EVENTS_SOURCE  = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev/events';
-const SEATMAP_SOURCE = 'data/seatmap.json';
+const SEATMAP_SOURCE = 'data/seatmap.json'; // fallback
+const SEATMAP_WORKER = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev/seatmap';
 
 let seatmap       = {};
 let bookedSeats   = new Set();
@@ -145,16 +146,99 @@ document.addEventListener('DOMContentLoaded', () => {
   // LOAD SEATMAP
   // ==========================================================
   function loadSeatMap() {
-    fetch(SEATMAP_SOURCE)
+    // Try worker seatmap first (has per-event zone/price/override config)
+    fetch(`${SEATMAP_WORKER}?eventId=${encodeURIComponent(eventId)}`)
       .then(res => res.json())
-      .then(data => {
-        seatmap = data;
-        loadBookedSeats();
+      .then(workerData => {
+        if (workerData.useDefault) {
+          // No override — load from seatmap.json as before
+          return fetch(SEATMAP_SOURCE).then(r => r.json()).then(data => {
+            seatmap = data;
+            loadBookedSeats();
+          });
+        }
+        // Has override — load base seatmap.json then apply overrides
+        return fetch(SEATMAP_SOURCE).then(r => r.json()).then(baseData => {
+          seatmap = applySeatmapOverrides(baseData, workerData);
+          loadBookedSeats();
+        });
       })
       .catch(err => {
-        console.error('Failed to load seatmap.json:', err);
-        seatGrid.innerHTML = '<tr><td colspan="100"><p style="color:#a0a0a8;">Unable to load seating layout.</p></td></tr>';
+        console.error('Seatmap load failed, using default:', err);
+        fetch(SEATMAP_SOURCE)
+          .then(res => res.json())
+          .then(data => { seatmap = data; loadBookedSeats(); })
+          .catch(() => {
+            seatGrid.innerHTML = '<tr><td colspan="100"><p style="color:#a0a0a8;">Unable to load seating layout.</p></td></tr>';
+          });
       });
+  }
+
+  // Apply per-event zone/price/color/unavailable overrides onto base seatmap
+  function applySeatmapOverrides(base, overrides) {
+    // Deep clone base
+    const result = JSON.parse(JSON.stringify(base));
+
+    // Override zones if defined
+    if (overrides.zones && Object.keys(overrides.zones).length) {
+      result.zones = overrides.zones;
+    }
+
+    // Build row-to-zone map from rowRanges
+    const rowZoneMap = {};
+    if (overrides.rowRanges && overrides.rowRanges.length) {
+      overrides.rowRanges.forEach(r => {
+        const fromCode = r.from.charCodeAt(0);
+        const toCode   = (r.to || r.from).charCodeAt(0);
+        for (let c = fromCode; c <= toCode; c++) {
+          rowZoneMap[String.fromCharCode(c)] = r.zone;
+        }
+      });
+    }
+
+    // Apply row zones and individual overrides to SEATPLAN
+    if (result.SEATPLAN) {
+      Object.keys(result.SEATPLAN).forEach(rowKey => {
+        if (!/^[A-Z]$/.test(rowKey)) return;
+        const rowZone = rowZoneMap[rowKey];
+        result.SEATPLAN[rowKey] = result.SEATPLAN[rowKey].map(cell => {
+          if (!cell || cell === 'AISLE' || (typeof cell === 'object' && cell && cell.type)) return cell;
+
+          let seatNum, currentZone, currentState;
+          if (typeof cell === 'object' && cell && cell.seat != null) {
+            seatNum = String(cell.seat);
+            currentZone  = cell.zone  || null;
+            currentState = cell.state || 'AVAILABLE';
+          } else {
+            seatNum = String(cell);
+            currentZone  = null;
+            currentState = 'AVAILABLE';
+          }
+
+          const seatCode = `${rowKey}${seatNum}`;
+
+          // Check individual override first
+          if (overrides.overrides && overrides.overrides[seatCode]) {
+            const ov = overrides.overrides[seatCode];
+            return {
+              seat:  Number(seatNum),
+              zone:  ov.zone || rowZone || currentZone,
+              state: ov.state || currentState
+            };
+          }
+
+          // Apply row zone if defined
+          if (rowZone) {
+            return { seat: Number(seatNum), zone: rowZone, state: currentState };
+          }
+
+          // No override — return as object for consistency
+          return typeof cell === 'object' ? cell : { seat: Number(seatNum), zone: currentZone, state: currentState };
+        });
+      });
+    }
+
+    return result;
   }
 
   function getAllSeatCodesFromSeatmap() {

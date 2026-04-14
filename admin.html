@@ -147,6 +147,18 @@
     #toast.ok{border-color:rgba(74,222,128,.4);color:#4ade80}
     #toast.err{border-color:rgba(248,113,113,.4);color:#f87171}
 
+    .sm-section{background:var(--dark2);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:16px;margin-bottom:16px}
+    .sm-section-title{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:12px}
+    .zone-row,.range-row,.override-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+    .zone-row input,.range-row input,.override-row input,.range-row select,.override-row select{padding:7px 10px;background:var(--dark3);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-size:.82rem;outline:none;min-width:80px}
+    .zone-row input:focus,.range-row input:focus,.override-row input:focus{border-color:var(--gold)}
+    .color-input{width:44px!important;height:32px;padding:2px!important;cursor:pointer;border-radius:6px}
+    .btn-add-row{padding:6px 12px;background:rgba(201,162,39,.1);color:var(--gold);border:1px solid rgba(201,162,39,.2);border-radius:6px;font-size:.78rem;cursor:pointer;font-weight:700}
+    .btn-del-row{padding:5px 10px;background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2);border-radius:6px;font-size:.78rem;cursor:pointer}
+    .sm-save-bar{display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)}
+    .sm-preview{background:var(--dark2);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;margin-top:16px;font-size:.78rem;color:var(--muted);line-height:1.8}
+    .sm-preview .zone-chip{display:inline-block;border-radius:4px;padding:2px 8px;font-size:.72rem;font-weight:700;margin:2px}
+
     @media(max-width:600px){
       .booking-card,.ev-header{flex-direction:column}
       .bk-meta{text-align:left}
@@ -276,12 +288,16 @@
   <!-- SEAT MAP TAB -->
   <div class="tab-panel" id="tab-seatmap">
     <div class="panel-header">
-      <div class="panel-title">Seat Map Overview</div>
-      <select class="search-input" id="smEventFilter" onchange="loadSeatMap()" style="max-width:260px;">
-        <option value="">Select Event…</option>
-      </select>
+      <div class="panel-title">Seat Map Config</div>
+      <div class="panel-actions">
+        <select class="search-input" id="smEventFilter" onchange="loadSeatmapConfig()" style="max-width:220px;">
+          <option value="">Select Event…</option>
+        </select>
+      </div>
     </div>
-    <div id="seatMapView"></div>
+    <div id="seatMapEditor">
+      <div class="empty-state"><div class="empty-icon">&#127922;</div><div class="empty-text">Select an event to configure its seat map.</div></div>
+    </div>
   </div>
 </div>
 
@@ -669,6 +685,8 @@ function populateSeatMapFilter(events){
   });
 }
 
+async function loadSeatMap(){ loadSeatmapConfig(); }
+
 async function loadSeatMap(){
   const eventId = document.getElementById('smEventFilter').value;
   const el      = document.getElementById('seatMapView');
@@ -818,6 +836,197 @@ async function doToggle(btn,id,current){
     if(data.success){ showToast(`Bookings ${newStatus} for ${id}`,'ok'); loadEvents(); }
     else{ btn.disabled=false; showToast(data.error||'Error.','err'); }
   } catch(e){ btn.disabled=false; showToast('Network error.','err'); }
+}
+
+// ── SEATMAP EDITOR ──────────────────────────────────────────
+async function loadSeatmapConfig() {
+  const eventId = document.getElementById('smEventFilter').value;
+  const el      = document.getElementById('seatMapEditor');
+  if (!eventId) { el.innerHTML='<div class="empty-state"><div class="empty-icon">&#127922;</div><div class="empty-text">Select an event to configure its seat map.</div></div>'; return; }
+
+  el.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Loading...</div>';
+
+  try {
+    const res  = await fetch(WORKER+'/admin-seatmap?eventId='+encodeURIComponent(eventId), { headers:{'X-Admin-Token':token} });
+    const data = await res.json();
+
+    // Default zones from seatmap.json
+    let zones     = [{name:'GOLD',color:'#c9a227',price:150},{name:'SILVER',color:'#888888',price:100},{name:'BRONZE',color:'#cd7f32',price:75}];
+    let rowRanges = [];
+    let overrides = [];
+
+    if (data.exists && data.values) {
+      // Parse existing sheet data
+      let section = null;
+      const parsed = { zones:[], rowRanges:[], overrides:[] };
+      data.values.forEach(row => {
+        const f = String(row[0]||'').trim().toUpperCase();
+        if (!f) { section=null; return; }
+        if (f==='ZONES')      { section='zones'; return; }
+        if (f==='ROW RANGES') { section='rowRanges'; return; }
+        if (f==='OVERRIDES')  { section='overrides'; return; }
+        if (section==='zones')      parsed.zones.push({name:f,color:row[1]||'',price:Number(row[2]||0)});
+        if (section==='rowRanges')  parsed.rowRanges.push({from:f,to:String(row[1]||f).toUpperCase(),zone:String(row[2]||'').toUpperCase()});
+        if (section==='overrides')  parsed.overrides.push({seat:f,zone:String(row[1]||'').toUpperCase(),state:String(row[2]||'AVAILABLE').toUpperCase()});
+      });
+      if (parsed.zones.length)     zones     = parsed.zones;
+      if (parsed.rowRanges.length) rowRanges = parsed.rowRanges;
+      if (parsed.overrides.length) overrides = parsed.overrides;
+    }
+
+    renderSeatmapEditor(eventId, zones, rowRanges, overrides);
+  } catch(e) { showToast('Failed to load seatmap config.','err'); }
+}
+
+function renderSeatmapEditor(eventId, zones, rowRanges, overrides) {
+  const el = document.getElementById('seatMapEditor');
+  const evName = (allEvents.find(e=>e['Event ID']===eventId)||{})['Event Title'] || eventId;
+
+  let html = `<div style="font-size:.82rem;color:var(--muted);margin-bottom:16px;">Configuring: <strong style="color:var(--text)">${esc(evName)}</strong> &nbsp;<span style="color:#555">(${esc(eventId)})</span></div>`;
+
+  // ZONES
+  html += `<div class="sm-section">
+    <div class="sm-section-title">Zones &amp; Prices</div>
+    <div id="zonesContainer">`;
+  zones.forEach((z,i) => {
+    html += zoneRowHtml(i, z.name, z.color, z.price);
+  });
+  html += `</div>
+    <button class="btn-add-row" onclick="addZoneRow()">+ Add Zone</button>
+  </div>`;
+
+  // ROW RANGES
+  html += `<div class="sm-section">
+    <div class="sm-section-title">Row Ranges → Zone Assignment</div>
+    <div style="font-size:.75rem;color:var(--muted);margin-bottom:10px;">Assign entire rows (or a range of rows) to a zone. E.g. rows A to D = GOLD.</div>
+    <div id="rangesContainer">`;
+  if (!rowRanges.length) {
+    html += rangeRowHtml(0, 'A', 'A', '');
+  } else {
+    rowRanges.forEach((r,i) => { html += rangeRowHtml(i, r.from, r.to, r.zone); });
+  }
+  html += `</div>
+    <button class="btn-add-row" onclick="addRangeRow()">+ Add Row Range</button>
+  </div>`;
+
+  // OVERRIDES
+  html += `<div class="sm-section">
+    <div class="sm-section-title">Individual Seat Overrides</div>
+    <div style="font-size:.75rem;color:var(--muted);margin-bottom:10px;">Override specific seats. E.g. mark A1 as UNAVAILABLE, or move B5 to GOLD zone.</div>
+    <div id="overridesContainer">`;
+  if (!overrides.length) {
+    html += overrideRowHtml(0, '', '', 'AVAILABLE');
+  } else {
+    overrides.forEach((o,i) => { html += overrideRowHtml(i, o.seat, o.zone, o.state||'AVAILABLE'); });
+  }
+  html += `</div>
+    <button class="btn-add-row" onclick="addOverrideRow()">+ Add Override</button>
+  </div>`;
+
+  // SAVE
+  html += `<div class="sm-save-bar">
+    <button class="btn-save" onclick="saveSeatmapConfig('${esc(eventId)}')">Save Seat Map Config</button>
+    <button class="btn-cancel-form" onclick="clearSeatmapEditor()">Cancel</button>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+function zoneRowHtml(i, name, color, price) {
+  return `<div class="zone-row" id="zrow-${i}">
+    <input placeholder="Zone name (e.g. GOLD)" value="${esc(name)}" style="flex:1;min-width:100px;" class="zone-name">
+    <input type="color" class="color-input zone-color" value="${color||'#c9a227'}" title="Zone color">
+    <input type="number" placeholder="Price (SGD)" value="${price||''}" style="width:110px;" class="zone-price">
+    <button class="btn-del-row" onclick="this.closest('.zone-row').remove()">&#x2715;</button>
+  </div>`;
+}
+
+function rangeRowHtml(i, from, to, zone) {
+  return `<div class="range-row" id="rrow-${i}">
+    <span style="font-size:.75rem;color:var(--muted);white-space:nowrap;">Row</span>
+    <input placeholder="From (e.g. A)" value="${esc(from)}" style="width:60px;text-align:center;" class="range-from" maxlength="1">
+    <span style="font-size:.75rem;color:var(--muted);">to</span>
+    <input placeholder="To (e.g. D)" value="${esc(to)}" style="width:60px;text-align:center;" class="range-to" maxlength="1">
+    <span style="font-size:.75rem;color:var(--muted);">=</span>
+    <input placeholder="Zone (e.g. GOLD)" value="${esc(zone)}" style="flex:1;min-width:80px;" class="range-zone">
+    <button class="btn-del-row" onclick="this.closest('.range-row').remove()">&#x2715;</button>
+  </div>`;
+}
+
+function overrideRowHtml(i, seat, zone, state) {
+  return `<div class="override-row" id="orow-${i}">
+    <input placeholder="Seat (e.g. A1)" value="${esc(seat)}" style="width:90px;text-align:center;" class="ov-seat">
+    <input placeholder="Zone (optional)" value="${esc(zone)}" style="flex:1;min-width:80px;" class="ov-zone">
+    <select class="ov-state" style="width:140px;">
+      <option value="AVAILABLE"${state==='AVAILABLE'?' selected':''}>Available</option>
+      <option value="UNAVAILABLE"${state==='UNAVAILABLE'?' selected':''}>Unavailable</option>
+    </select>
+    <button class="btn-del-row" onclick="this.closest('.override-row').remove()">&#x2715;</button>
+  </div>`;
+}
+
+let _zoneIdx=100, _rangeIdx=100, _overrideIdx=100;
+function addZoneRow(){
+  const c=document.getElementById('zonesContainer');
+  const d=document.createElement('div'); d.innerHTML=zoneRowHtml(_zoneIdx++,'','#c9a227','');
+  c.appendChild(d.firstChild);
+}
+function addRangeRow(){
+  const c=document.getElementById('rangesContainer');
+  const d=document.createElement('div'); d.innerHTML=rangeRowHtml(_rangeIdx++,'','','');
+  c.appendChild(d.firstChild);
+}
+function addOverrideRow(){
+  const c=document.getElementById('overridesContainer');
+  const d=document.createElement('div'); d.innerHTML=overrideRowHtml(_overrideIdx++,'','','AVAILABLE');
+  c.appendChild(d.firstChild);
+}
+
+async function saveSeatmapConfig(eventId) {
+  // Collect zones
+  const zones = [];
+  document.querySelectorAll('#zonesContainer .zone-row').forEach(row => {
+    const name  = row.querySelector('.zone-name').value.trim().toUpperCase();
+    const color = row.querySelector('.zone-color').value.trim();
+    const price = Number(row.querySelector('.zone-price').value) || 0;
+    if (name) zones.push({name, color, price});
+  });
+
+  // Collect row ranges
+  const rowRanges = [];
+  document.querySelectorAll('#rangesContainer .range-row').forEach(row => {
+    const from = row.querySelector('.range-from').value.trim().toUpperCase();
+    const to   = row.querySelector('.range-to').value.trim().toUpperCase();
+    const zone = row.querySelector('.range-zone').value.trim().toUpperCase();
+    if (from && zone) rowRanges.push({from, to: to||from, zone});
+  });
+
+  // Collect overrides
+  const overrides = [];
+  document.querySelectorAll('#overridesContainer .override-row').forEach(row => {
+    const seat  = row.querySelector('.ov-seat').value.trim().toUpperCase();
+    const zone  = row.querySelector('.ov-zone').value.trim().toUpperCase();
+    const state = row.querySelector('.ov-state').value;
+    if (seat) overrides.push({seat, zone, state});
+  });
+
+  if (!zones.length) { showToast('Add at least one zone.','err'); return; }
+
+  try {
+    const res  = await fetch(WORKER+'/admin-seatmap', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Admin-Token':token},
+      body: JSON.stringify({eventId, zones, rowRanges, overrides})
+    });
+    const data = await res.json();
+    if (data.success) showToast('Seat map saved!','ok');
+    else showToast(data.error||'Failed to save.','err');
+  } catch(e) { showToast('Network error.','err'); }
+}
+
+function clearSeatmapEditor() {
+  document.getElementById('smEventFilter').value='';
+  document.getElementById('seatMapEditor').innerHTML='<div class="empty-state"><div class="empty-icon">&#127922;</div><div class="empty-text">Select an event to configure its seat map.</div></div>';
 }
 
 // ── UTILS ────────────────────────────────────────────────────
