@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="X-Frame-Options" content="DENY">
   <title>Admin | Light & Shadow Media</title>
   <link rel="stylesheet" href="css/styles.css">
   <style>
@@ -77,6 +81,20 @@
       .booking-meta { text-align: left; }
       .confirm-btn  { width: 100%; }
     }
+
+    .session-bar { background: rgba(201,162,39,0.1); border-bottom: 1px solid rgba(201,162,39,0.2); padding: 8px 24px; font-size: 0.75rem; color: #888; display: flex; justify-content: space-between; align-items: center; }
+    .session-bar span { color: #c9a227; }
+    .lockout-msg { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; color: #f87171; margin-top: 12px; }
+
+    .confirm-dialog { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.75); align-items: center; justify-content: center; padding: 24px; }
+    .confirm-dialog.show { display: flex; }
+    .confirm-box { background: #111116; border: 1px solid rgba(201,162,39,0.3); border-radius: 12px; padding: 28px; max-width: 400px; width: 100%; text-align: center; }
+    .confirm-box h3 { font-size: 1.1rem; margin-bottom: 8px; color: #f5f5f7; }
+    .confirm-box p  { font-size: 0.85rem; color: #888; margin-bottom: 24px; line-height: 1.5; }
+    .confirm-btns { display: flex; gap: 10px; }
+    .confirm-btns button { flex: 1; padding: 12px; border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; border: none; }
+    .confirm-yes { background: #1a472a; color: #4ade80; }
+    .confirm-no  { background: rgba(255,255,255,0.05); color: #888; border: 1px solid rgba(255,255,255,0.1) !important; }
   </style>
 </head>
 <body>
@@ -100,17 +118,42 @@
       <button class="btn-sm btn-logout"  id="logoutBtn">Logout</button>
     </div>
   </div>
+  <div class="session-bar">
+    <span id="sessionInfo">Session active</span>
+    <span id="sessionTimer"></span>
+  </div>
   <div class="admin-body">
     <div class="stats-bar"    id="statsBar"></div>
     <div id="bookingsList"></div>
   </div>
 </div>
 
+<!-- Confirm dialog -->
+<div class="confirm-dialog" id="confirmDialog">
+  <div class="confirm-box">
+    <h3>Confirm Payment &amp; Send Ticket</h3>
+    <p id="confirmMsg">Send QR ticket to this customer?</p>
+    <div class="confirm-btns">
+      <button class="confirm-no"  id="confirmNo">Cancel</button>
+      <button class="confirm-yes" id="confirmYes">Yes, Send Ticket</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
-  const WORKER = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev';
-  let token = '';
+  const WORKER       = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev';
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_MS   = 15 * 60 * 1000; // 15 minutes
+  const SESSION_MS   = 2 * 60 * 60 * 1000; // 2 hours
+  const WARN_MS      = 90 * 60 * 1000; // warn at 90 mins
+
+  // Token lives in memory only — cleared when tab closes
+  let token        = '';
+  let sessionStart = null;
+  let sessionTick  = null;
+  let pendingConfirm = null; // { btn, eventId, ref, name }
 
   const loginScreen  = document.getElementById('loginScreen');
   const adminScreen  = document.getElementById('adminScreen');
@@ -119,36 +162,138 @@
   const statsBar     = document.getElementById('statsBar');
   const toast        = document.getElementById('toast');
 
-  // LOGIN
+  // ── RATE LIMITING (stored in sessionStorage — clears on tab close) ──────────
+  function getAttempts() {
+    try {
+      const d = JSON.parse(sessionStorage.getItem('lsm_login') || '{}');
+      return { count: d.count || 0, lockedUntil: d.lockedUntil || 0 };
+    } catch { return { count: 0, lockedUntil: 0 }; }
+  }
+
+  function setAttempts(count, lockedUntil) {
+    sessionStorage.setItem('lsm_login', JSON.stringify({ count, lockedUntil }));
+  }
+
+  function checkLockout() {
+    const { count, lockedUntil } = getAttempts();
+    if (lockedUntil && Date.now() < lockedUntil) {
+      const mins = Math.ceil((lockedUntil - Date.now()) / 60000);
+      return `Too many failed attempts. Try again in ${mins} minute${mins > 1 ? 's' : ''}.`;
+    }
+    if (lockedUntil && Date.now() >= lockedUntil) {
+      setAttempts(0, 0); // reset after lockout expires
+    }
+    return null;
+  }
+
+  function recordFailedAttempt() {
+    const { count } = getAttempts();
+    const newCount = count + 1;
+    if (newCount >= MAX_ATTEMPTS) {
+      setAttempts(newCount, Date.now() + LOCKOUT_MS);
+    } else {
+      setAttempts(newCount, 0);
+    }
+    return MAX_ATTEMPTS - newCount;
+  }
+
+  function clearAttempts() { sessionStorage.removeItem('lsm_login'); }
+
+  // ── LOGIN ────────────────────────────────────────────────────────────────────
   document.getElementById('loginBtn').addEventListener('click', doLogin);
   document.getElementById('adminPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
   async function doLogin() {
+    // Check lockout first
+    const lockMsg = checkLockout();
+    if (lockMsg) { loginError.textContent = lockMsg; return; }
+
     const pass = document.getElementById('adminPass').value.trim();
     if (!pass) { loginError.textContent = 'Enter password.'; return; }
+
     const btn = document.getElementById('loginBtn');
     btn.disabled = true; btn.textContent = 'Checking...';
     loginError.textContent = '';
+
     try {
       const res  = await fetch(WORKER + '/admin-bookings', { headers: { 'X-Admin-Token': pass } });
       const data = await res.json();
-      if (res.status === 401 || !data.success) { loginError.textContent = 'Wrong password.'; btn.disabled = false; btn.textContent = 'Login'; return; }
+
+      if (res.status === 401 || !data.success) {
+        const remaining = recordFailedAttempt();
+        const { lockedUntil } = getAttempts();
+        if (lockedUntil) {
+          loginError.textContent = `Too many failed attempts. Locked for 15 minutes.`;
+        } else {
+          loginError.textContent = `Wrong password. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`;
+        }
+        btn.disabled = false; btn.textContent = 'Login';
+        document.getElementById('adminPass').value = '';
+        return;
+      }
+
+      clearAttempts();
       token = pass;
+      sessionStart = Date.now();
       loginScreen.style.display = 'none';
       adminScreen.style.display = 'block';
+      document.getElementById('adminPass').value = ''; // clear password field
+      startSessionTimer();
       render(data);
-    } catch(e) { loginError.textContent = 'Network error.'; }
-    btn.disabled = false; btn.textContent = 'Login';
+    } catch(e) {
+      loginError.textContent = 'Network error.';
+      btn.disabled = false; btn.textContent = 'Login';
+    }
   }
 
-  document.getElementById('logoutBtn').addEventListener('click', () => {
+  // ── SESSION TIMER ────────────────────────────────────────────────────────────
+  function startSessionTimer() {
+    clearInterval(sessionTick);
+    sessionTick = setInterval(() => {
+      const elapsed = Date.now() - sessionStart;
+      const remaining = SESSION_MS - elapsed;
+
+      if (remaining <= 0) {
+        forceLogout('Session expired. Please login again.');
+        return;
+      }
+
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      const timerEl = document.getElementById('sessionTimer');
+      if (timerEl) timerEl.textContent = `Session expires in ${mins}:${String(secs).padStart(2,'0')}`;
+
+      // Warn at 90 mins
+      if (elapsed >= WARN_MS && elapsed < WARN_MS + 1000) {
+        showToast('Session expires in 30 minutes. Save your work.', 'error');
+      }
+    }, 1000);
+  }
+
+  function forceLogout(msg) {
+    clearInterval(sessionTick);
     token = '';
     loginScreen.style.display = 'flex';
     adminScreen.style.display = 'none';
+    loginError.textContent = msg || '';
     document.getElementById('adminPass').value = '';
-    loginError.textContent = '';
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    clearInterval(sessionTick);
+    forceLogout('');
   });
 
+  // Auto-logout on tab hidden for >30 mins
+  let hiddenAt = null;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { hiddenAt = Date.now(); }
+    else if (hiddenAt && token && Date.now() - hiddenAt > 30 * 60 * 1000) {
+      forceLogout('Session expired due to inactivity.');
+    }
+  });
+
+  // ── LOAD BOOKINGS ────────────────────────────────────────────────────────────
   document.getElementById('refreshBtn').addEventListener('click', loadBookings);
 
   async function loadBookings() {
@@ -156,7 +301,7 @@
     statsBar.innerHTML = '';
     try {
       const res  = await fetch(WORKER + '/admin-bookings', { headers: { 'X-Admin-Token': token } });
-      if (res.status === 401) { document.getElementById('logoutBtn').click(); return; }
+      if (res.status === 401) { forceLogout('Session expired.'); return; }
       const data = await res.json();
       render(data);
     } catch(e) { showToast('Network error.', 'error'); }
@@ -222,19 +367,48 @@
     bookingsList.innerHTML = html;
   }
 
-  async function confirmBooking(btn) {
+  // ── CONFIRM DIALOG ──────────────────────────────────────────────────────────
+  document.getElementById('confirmNo').addEventListener('click', () => {
+    document.getElementById('confirmDialog').classList.remove('show');
+    pendingConfirm = null;
+  });
+
+  document.getElementById('confirmYes').addEventListener('click', async () => {
+    document.getElementById('confirmDialog').classList.remove('show');
+    if (!pendingConfirm) return;
+    const { btn, eventId, ref, name } = pendingConfirm;
+    pendingConfirm = null;
+    await doConfirm(btn, eventId, ref, name);
+  });
+
+  // Tap outside dialog to cancel
+  document.getElementById('confirmDialog').addEventListener('click', e => {
+    if (e.target === document.getElementById('confirmDialog')) {
+      document.getElementById('confirmDialog').classList.remove('show');
+      pendingConfirm = null;
+    }
+  });
+
+  function confirmBooking(btn) {
     const eventId = btn.getAttribute('data-eventid');
     const ref     = btn.getAttribute('data-ref');
     const name    = btn.getAttribute('data-name');
-    const safeRef = (ref || '').replace(/[^a-zA-Z0-9_-]/g,'_');
-    const card    = document.getElementById('card-' + safeRef);
-
-    console.log('Confirming:', { eventId, ref, name });
 
     if (!eventId || !ref) {
-      showToast('Missing booking data. Please refresh.', 'error');
+      showToast('Missing booking data. Refresh the page.', 'error');
       return;
     }
+
+    // Show confirm dialog
+    pendingConfirm = { btn, eventId, ref, name };
+    document.getElementById('confirmMsg').textContent =
+      `Send QR ticket to ${name}? This will mark the booking as paid.`;
+    document.getElementById('confirmDialog').classList.add('show');
+  }
+
+  async function doConfirm(btn, eventId, ref, name) {
+    const safeRef = (ref || '').replace(/[^a-zA-Z0-9_-]/g,'_');
+    const card    = document.getElementById('card-' + safeRef);
 
     btn.disabled = true; btn.textContent = 'Sending...';
     try {
@@ -243,9 +417,12 @@
         headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
         body: JSON.stringify({ eventId, ref })
       });
+
+      if (res.status === 401) { forceLogout('Session expired.'); return; }
+
       const data = await res.json();
       if (data.success) {
-        btn.classList.add('done'); btn.textContent = 'Ticket Sent';
+        btn.classList.add('done'); btn.textContent = '&#10003; Ticket Sent';
         if (card) card.style.opacity = '0.45';
         showToast('Ticket sent to ' + name, 'success');
       } else {
