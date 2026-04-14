@@ -6,136 +6,293 @@
   <meta name="robots" content="noindex, nofollow">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="X-Frame-Options" content="DENY">
   <title>Admin | Light & Shadow Media</title>
-  <link rel="stylesheet" href="css/styles.css">
   <style>
-    * { box-sizing: border-box; }
-    body { background: #0a0a0c; color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; min-height: 100vh; }
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    :root{--gold:#c9a227;--dark:#0a0a0c;--dark2:#111116;--dark3:#1a1a1f;--text:#f5f5f7;--muted:#888;--green:#1a472a;--red:#7b1d1d}
+    body{background:var(--dark);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;min-height:100vh}
 
-    #loginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
-    .login-card { background: #111116; border: 1px solid rgba(201,162,39,0.2); border-radius: 12px; padding: 40px 32px; width: 100%; max-width: 400px; text-align: center; }
-    .login-logo { font-size: 1rem; letter-spacing: 0.2em; color: #c9a227; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
-    .login-sub  { font-size: 0.75rem; color: #888; margin-bottom: 32px; }
-    .login-card label { display: block; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: #c9a227; margin-bottom: 8px; text-align: left; }
-    .login-card input { width: 100%; padding: 12px 16px; background: #1a1a1f; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #f5f5f7; font-size: 1rem; margin-bottom: 20px; outline: none; }
-    .login-card input:focus { border-color: #c9a227; }
-    .btn-gold { width: 100%; padding: 14px; background: #c9a227; color: #000; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: bold; letter-spacing: 0.05em; cursor: pointer; }
-    .btn-gold:hover { background: #a07d1a; }
-    .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
-    .login-error { font-size: 0.82rem; color: #f87171; margin-top: 12px; min-height: 20px; }
+    /* LOGIN */
+    #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .login-card{background:var(--dark2);border:1px solid rgba(201,162,39,.2);border-radius:12px;padding:40px 32px;width:100%;max-width:400px;text-align:center}
+    .login-logo{font-size:1rem;letter-spacing:.2em;color:var(--gold);font-weight:700;text-transform:uppercase;margin-bottom:4px}
+    .login-sub{font-size:.75rem;color:var(--muted);margin-bottom:32px}
+    .login-card label{display:block;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;text-align:left}
+    .login-card input{width:100%;padding:12px 16px;background:var(--dark3);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:20px;outline:none}
+    .login-card input:focus{border-color:var(--gold)}
+    .btn-gold{width:100%;padding:14px;background:var(--gold);color:#000;border:none;border-radius:8px;font-size:.9rem;font-weight:700;letter-spacing:.05em;cursor:pointer}
+    .btn-gold:hover{background:#a07d1a}.btn-gold:disabled{opacity:.5;cursor:not-allowed}
+    .login-error{font-size:.82rem;color:#f87171;margin-top:12px;min-height:20px}
+    .lockout-bar{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:8px;padding:10px 14px;font-size:.8rem;color:#f87171;margin-bottom:12px;display:none}
 
-    #adminScreen { display: none; }
-    .admin-header { background: #111116; border-bottom: 1px solid rgba(201,162,39,0.2); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
-    .admin-title { font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; color: #c9a227; font-weight: bold; }
-    .admin-actions { display: flex; gap: 10px; align-items: center; }
-    .btn-sm { padding: 8px 16px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer; border: none; letter-spacing: 0.03em; }
-    .btn-refresh { background: rgba(201,162,39,0.15); color: #c9a227; border: 1px solid rgba(201,162,39,0.3); }
-    .btn-logout  { background: rgba(255,255,255,0.05); color: #888; border: 1px solid rgba(255,255,255,0.1); }
+    /* MAIN */
+    #adminScreen{display:none}
+    .admin-header{background:var(--dark2);border-bottom:1px solid rgba(201,162,39,.2);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+    .admin-brand{font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700}
+    .header-right{display:flex;align-items:center;gap:8px}
+    .session-time{font-size:.72rem;color:var(--muted)}
+    .btn-sm{padding:7px 14px;border-radius:6px;font-size:.78rem;font-weight:700;cursor:pointer;border:none}
+    .btn-outline{background:rgba(255,255,255,.04);color:var(--muted);border:1px solid rgba(255,255,255,.1)!important}
+    .btn-danger{background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2)!important}
 
-    .admin-body { padding: 24px; max-width: 1100px; margin: 0 auto; }
-    .stats-bar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
-    .stat-pill { background: #111116; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px 20px; text-align: center; flex: 1; min-width: 120px; }
-    .stat-num   { font-size: 1.8rem; font-weight: bold; color: #c9a227; line-height: 1; }
-    .stat-label { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-top: 4px; }
+    /* TABS */
+    .tab-bar{display:flex;background:var(--dark2);border-bottom:1px solid rgba(255,255,255,.06);padding:0 20px}
+    .tab-btn{padding:12px 20px;font-size:.82rem;font-weight:600;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:color .15s}
+    .tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
+    .tab-panel{display:none;padding:20px;max-width:1100px;margin:0 auto}
+    .tab-panel.active{display:block}
 
-    .event-group { margin-bottom: 32px; }
-    .event-group-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(201,162,39,0.2); flex-wrap: wrap; }
-    .event-group-title { font-size: 1rem; font-weight: bold; color: #f5f5f7; }
-    .event-group-date  { font-size: 0.8rem; color: #888; }
-    .event-badge { font-size: 0.7rem; background: rgba(201,162,39,0.15); color: #c9a227; border-radius: 20px; padding: 3px 10px; letter-spacing: 0.05em; }
+    /* STATS */
+    .stats-row{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+    .stat-pill{background:var(--dark2);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:12px 18px;flex:1;min-width:100px;text-align:center}
+    .stat-num{font-size:1.6rem;font-weight:700;color:var(--gold);line-height:1}
+    .stat-lbl{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:3px}
 
-    .booking-card { background: #111116; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 16px 20px; margin-bottom: 10px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-    .booking-card:hover { border-color: rgba(201,162,39,0.2); }
-    .booking-info    { flex: 1; min-width: 200px; }
-    .booking-name    { font-size: 1rem; font-weight: bold; color: #f5f5f7; margin-bottom: 2px; }
-    .booking-contact { font-size: 0.8rem; color: #888; margin-bottom: 6px; }
-    .booking-seats   { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; }
-    .seat-chip  { font-size: 0.75rem; background: #1e3a5f; color: #f5f5f7; border-radius: 4px; padding: 3px 8px; font-weight: bold; }
-    .booking-meta  { text-align: right; min-width: 100px; }
-    .booking-total { font-size: 1.2rem; font-weight: bold; color: #c9a227; margin-bottom: 2px; }
-    .booking-time  { font-size: 0.72rem; color: #666; }
-    .booking-ref   { font-size: 0.68rem; color: #555; font-family: monospace; margin-top: 2px; word-break: break-all; }
+    /* PANEL HEADER */
+    .panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+    .panel-title{font-size:1rem;font-weight:700;color:var(--text)}
+    .panel-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-    .confirm-btn { padding: 10px 20px; background: #1a472a; color: #4ade80; border: 1px solid rgba(74,222,128,0.3); border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; white-space: nowrap; min-width: 160px; }
-    .confirm-btn:hover    { background: #2d6a4f; }
-    .confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .confirm-btn.done     { background: rgba(74,222,128,0.1); color: #4ade80; border-color: rgba(74,222,128,0.2); cursor: default; }
-    .confirm-btn.err      { background: rgba(248,113,113,0.1); color: #f87171; border-color: rgba(248,113,113,0.2); }
+    /* SEARCH */
+    .search-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+    .search-input{flex:1;min-width:180px;padding:9px 14px;background:var(--dark3);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--text);font-size:.85rem;outline:none}
+    .search-input:focus{border-color:var(--gold)}
+    select.search-input{cursor:pointer}
 
-    .empty-state { text-align: center; padding: 60px 24px; color: #555; }
-    .empty-icon  { font-size: 3rem; margin-bottom: 12px; }
-    .empty-text  { font-size: 0.9rem; }
+    /* STATUS BADGE */
+    .badge{display:inline-block;font-size:.68rem;font-weight:700;border-radius:20px;padding:3px 10px;letter-spacing:.05em;text-transform:uppercase}
+    .badge-pending{background:rgba(251,191,36,.15);color:#fbbf24}
+    .badge-paid{background:rgba(74,222,128,.15);color:#4ade80}
+    .badge-sent{background:rgba(99,91,255,.15);color:#a78bfa}
+    .badge-checked{background:rgba(201,162,39,.15);color:var(--gold)}
+    .badge-open{background:rgba(74,222,128,.15);color:#4ade80}
+    .badge-closed{background:rgba(248,113,113,.15);color:#f87171}
+    .badge-upcoming{background:rgba(99,91,255,.15);color:#a78bfa}
+    .badge-completed{background:rgba(201,162,39,.15);color:var(--gold)}
 
-    .spinner-wrap { text-align: center; padding: 60px; color: #555; font-size: 0.85rem; }
-    .spinner { width: 36px; height: 36px; border: 3px solid rgba(201,162,39,0.2); border-top-color: #c9a227; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 16px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    /* BOOKING CARDS */
+    .booking-card{background:var(--dark2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;transition:border-color .15s}
+    .booking-card:hover{border-color:rgba(201,162,39,.2)}
+    .bk-info{flex:1;min-width:180px}
+    .bk-name{font-size:.95rem;font-weight:700;margin-bottom:2px}
+    .bk-contact{font-size:.78rem;color:var(--muted);margin-bottom:5px}
+    .bk-seats{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+    .seat-chip{font-size:.72rem;background:#1e3a5f;color:var(--text);border-radius:4px;padding:3px 8px;font-weight:700}
+    .bk-ref{font-size:.65rem;color:#444;font-family:monospace;word-break:break-all}
+    .bk-meta{text-align:right;min-width:90px}
+    .bk-total{font-size:1.1rem;font-weight:700;color:var(--gold)}
+    .bk-time{font-size:.7rem;color:#555;margin-top:2px}
+    .bk-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .action-btn{padding:8px 14px;border-radius:7px;font-size:.78rem;font-weight:700;cursor:pointer;border:none;white-space:nowrap}
+    .action-btn:disabled{opacity:.4;cursor:not-allowed}
+    .btn-confirm{background:var(--green);color:#4ade80;border:1px solid rgba(74,222,128,.3)!important}
+    .btn-confirm:hover{background:#2d6a4f}
+    .btn-resend{background:rgba(99,91,255,.15);color:#a78bfa;border:1px solid rgba(99,91,255,.3)!important}
+    .btn-resend:hover{background:rgba(99,91,255,.25)}
+    .btn-done{background:rgba(74,222,128,.08);color:#4ade80;border:1px solid rgba(74,222,128,.15)!important;cursor:default}
+    .btn-err{background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2)!important}
 
-    #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1a1a1f; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 24px; font-size: 0.875rem; transition: transform 0.25s; z-index: 200; white-space: nowrap; }
-    #toast.show    { transform: translateX(-50%) translateY(0); }
-    #toast.success { border-color: rgba(74,222,128,0.4); color: #4ade80; }
-    #toast.error   { border-color: rgba(248,113,113,0.4); color: #f87171; }
+    /* EVENTS */
+    .event-card{background:var(--dark2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:16px 18px;margin-bottom:10px}
+    .ev-header{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+    .ev-info{flex:1;min-width:180px}
+    .ev-title{font-size:.95rem;font-weight:700;margin-bottom:3px}
+    .ev-meta{font-size:.78rem;color:var(--muted);margin-bottom:6px}
+    .ev-id{font-size:.68rem;color:#555;font-family:monospace}
+    .ev-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+    .toggle-btn{padding:7px 16px;border-radius:7px;font-size:.78rem;font-weight:700;cursor:pointer;border:none}
+    .toggle-open{background:var(--green);color:#4ade80;border:1px solid rgba(74,222,128,.3)!important}
+    .toggle-close{background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2)!important}
+    .btn-edit{background:rgba(201,162,39,.1);color:var(--gold);border:1px solid rgba(201,162,39,.2)!important;padding:7px 14px;border-radius:7px;font-size:.78rem;font-weight:700;cursor:pointer}
 
-    @media (max-width: 600px) {
-      .booking-card { flex-direction: column; align-items: flex-start; }
-      .booking-meta { text-align: left; }
-      .confirm-btn  { width: 100%; }
+    /* FORM */
+    .form-card{background:var(--dark2);border:1px solid rgba(201,162,39,.15);border-radius:10px;padding:20px;margin-bottom:20px;display:none}
+    .form-card.open{display:block}
+    .form-title{font-size:.9rem;font-weight:700;color:var(--gold);margin-bottom:16px}
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:16px}
+    .form-group{display:flex;flex-direction:column;gap:6px}
+    .form-group label{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+    .form-group input,.form-group select,.form-group textarea{padding:9px 12px;background:var(--dark3);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:var(--text);font-size:.85rem;outline:none;font-family:inherit}
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--gold)}
+    .form-group textarea{resize:vertical;min-height:80px}
+    .form-group select{cursor:pointer}
+    .form-actions{display:flex;gap:8px}
+    .btn-save{padding:10px 24px;background:var(--gold);color:#000;border:none;border-radius:7px;font-size:.85rem;font-weight:700;cursor:pointer}
+    .btn-save:hover{background:#a07d1a}
+    .btn-cancel-form{padding:10px 18px;background:rgba(255,255,255,.05);color:var(--muted);border:1px solid rgba(255,255,255,.1);border-radius:7px;font-size:.85rem;cursor:pointer}
+
+    /* SPINNER / EMPTY */
+    .spinner-wrap{text-align:center;padding:50px;color:var(--muted);font-size:.85rem}
+    .spinner{width:34px;height:34px;border:3px solid rgba(201,162,39,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .empty-state{text-align:center;padding:50px 24px;color:#555}
+    .empty-icon{font-size:2.5rem;margin-bottom:10px}
+    .empty-text{font-size:.85rem}
+    .event-group-label{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.05)}
+
+    /* CONFIRM DIALOG */
+    .dialog{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.78);align-items:center;justify-content:center;padding:24px}
+    .dialog.show{display:flex}
+    .dialog-box{background:var(--dark2);border:1px solid rgba(201,162,39,.25);border-radius:12px;padding:28px;max-width:380px;width:100%;text-align:center}
+    .dialog-box h3{font-size:1rem;margin-bottom:8px}
+    .dialog-box p{font-size:.85rem;color:var(--muted);margin-bottom:22px;line-height:1.5}
+    .dialog-btns{display:flex;gap:8px}
+    .dialog-btns button{flex:1;padding:11px;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;border:none}
+    .dlg-yes{background:var(--green);color:#4ade80}
+    .dlg-no{background:rgba(255,255,255,.05);color:var(--muted);border:1px solid rgba(255,255,255,.1)!important}
+
+    /* TOAST */
+    #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--dark2);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:11px 22px;font-size:.85rem;transition:transform .25s;z-index:400;white-space:nowrap;pointer-events:none}
+    #toast.show{transform:translateX(-50%) translateY(0)}
+    #toast.ok{border-color:rgba(74,222,128,.4);color:#4ade80}
+    #toast.err{border-color:rgba(248,113,113,.4);color:#f87171}
+
+    @media(max-width:600px){
+      .booking-card,.ev-header{flex-direction:column}
+      .bk-meta{text-align:left}
+      .bk-actions,.ev-actions{width:100%}
+      .action-btn,.toggle-btn,.btn-edit{flex:1;text-align:center}
     }
-
-    .session-bar { background: rgba(201,162,39,0.1); border-bottom: 1px solid rgba(201,162,39,0.2); padding: 8px 24px; font-size: 0.75rem; color: #888; display: flex; justify-content: space-between; align-items: center; }
-    .session-bar span { color: #c9a227; }
-    .lockout-msg { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; color: #f87171; margin-top: 12px; }
-
-    .confirm-dialog { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.75); align-items: center; justify-content: center; padding: 24px; }
-    .confirm-dialog.show { display: flex; }
-    .confirm-box { background: #111116; border: 1px solid rgba(201,162,39,0.3); border-radius: 12px; padding: 28px; max-width: 400px; width: 100%; text-align: center; }
-    .confirm-box h3 { font-size: 1.1rem; margin-bottom: 8px; color: #f5f5f7; }
-    .confirm-box p  { font-size: 0.85rem; color: #888; margin-bottom: 24px; line-height: 1.5; }
-    .confirm-btns { display: flex; gap: 10px; }
-    .confirm-btns button { flex: 1; padding: 12px; border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; border: none; }
-    .confirm-yes { background: #1a472a; color: #4ade80; }
-    .confirm-no  { background: rgba(255,255,255,0.05); color: #888; border: 1px solid rgba(255,255,255,0.1) !important; }
   </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-card">
     <div class="login-logo">Light &amp; Shadow Media</div>
-    <div class="login-sub">Admin &mdash; Payment Confirmation</div>
+    <div class="login-sub">Admin Panel</div>
+    <div class="lockout-bar" id="lockoutBar"></div>
     <label for="adminPass">Admin Password</label>
-    <input type="password" id="adminPass" placeholder="Enter admin password" autocomplete="current-password">
+    <input type="password" id="adminPass" placeholder="Enter password" autocomplete="current-password">
     <button class="btn-gold" id="loginBtn">Login</button>
     <div class="login-error" id="loginError"></div>
   </div>
 </div>
 
+<!-- ADMIN -->
 <div id="adminScreen">
   <div class="admin-header">
-    <div class="admin-title">Bookings &mdash; Pending Payment</div>
-    <div class="admin-actions">
-      <button class="btn-sm btn-refresh" id="refreshBtn">Refresh</button>
-      <button class="btn-sm btn-logout"  id="logoutBtn">Logout</button>
+    <div class="admin-brand">&#127916; LSM Admin</div>
+    <div class="header-right">
+      <span class="session-time" id="sessionTime"></span>
+      <button class="btn-sm btn-outline" id="refreshBtn">&#8635; Refresh</button>
+      <button class="btn-sm btn-danger"  id="logoutBtn">Logout</button>
     </div>
   </div>
-  <div class="session-bar">
-    <span id="sessionInfo">Session active</span>
-    <span id="sessionTimer"></span>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="bookings">&#128195; Bookings</button>
+    <button class="tab-btn"        data-tab="events">&#127916; Events</button>
+    <button class="tab-btn"        data-tab="seatmap">&#127922; Seat Map</button>
   </div>
-  <div class="admin-body">
-    <div class="stats-bar"    id="statsBar"></div>
+
+  <!-- BOOKINGS TAB -->
+  <div class="tab-panel active" id="tab-bookings">
+    <div class="stats-row" id="bkStats"></div>
+    <div class="search-bar">
+      <input class="search-input" id="bkSearch" placeholder="Search name or email…" oninput="filterBookings()">
+      <select class="search-input" id="bkEventFilter" onchange="filterBookings()" style="max-width:220px;">
+        <option value="">All Events</option>
+      </select>
+      <select class="search-input" id="bkStatusFilter" onchange="filterBookings()" style="max-width:160px;">
+        <option value="">All Statuses</option>
+        <option value="Pending Payment">Pending Payment</option>
+        <option value="Paid">Paid</option>
+        <option value="Ticket Sent">Ticket Sent</option>
+        <option value="Checked In">Checked In</option>
+      </select>
+    </div>
     <div id="bookingsList"></div>
+  </div>
+
+  <!-- EVENTS TAB -->
+  <div class="tab-panel" id="tab-events">
+    <div class="panel-header">
+      <div class="panel-title">Events</div>
+      <div class="panel-actions">
+        <button class="btn-sm btn-outline" onclick="toggleAddForm()">+ Add Event</button>
+      </div>
+    </div>
+
+    <!-- Add Event Form -->
+    <div class="form-card" id="addEventForm">
+      <div class="form-title">Add New Event</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Event ID *</label><input id="f_id" placeholder="event-003" autocomplete="off"></div>
+        <div class="form-group"><label>Title *</label><input id="f_title" placeholder="Concert Name" autocomplete="off"></div>
+        <div class="form-group"><label>Date</label><input id="f_date" type="date"></div>
+        <div class="form-group"><label>Venue</label><input id="f_venue" placeholder="Venue name | Time" autocomplete="off"></div>
+        <div class="form-group"><label>Capacity</label><input id="f_capacity" type="number" placeholder="200" autocomplete="off"></div>
+        <div class="form-group"><label>Zones / Prices</label><input id="f_zones" placeholder="GOLD:$75, SILVER:$50" autocomplete="off"></div>
+        <div class="form-group"><label>Status</label>
+          <select id="f_status"><option value="upcoming">Upcoming</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select>
+        </div>
+        <div class="form-group"><label>Booking Status</label>
+          <select id="f_booking"><option value="closed">Closed</option><option value="open">Open</option></select>
+        </div>
+        <div class="form-group"><label>Category</label>
+          <select id="f_category"><option value="special">Special</option><option value="concert">Concert</option><option value="conference">Conference</option><option value="gala">Gala</option></select>
+        </div>
+        <div class="form-group"><label>Thumbnail URL</label><input id="f_thumb" placeholder="/assets/images/..." autocomplete="off"></div>
+        <div class="form-group"><label>Video URL</label><input id="f_video" placeholder="https://youtu.be/..." autocomplete="off"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;"><label>Description</label><textarea id="f_desc" placeholder="Brief description of the event..."></textarea></div>
+      <div class="form-actions">
+        <button class="btn-save" onclick="addEvent()">Save Event</button>
+        <button class="btn-cancel-form" onclick="toggleAddForm()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Edit Event Form -->
+    <div class="form-card" id="editEventForm">
+      <div class="form-title">Edit Event</div>
+      <input type="hidden" id="ef_id">
+      <div class="form-grid">
+        <div class="form-group"><label>Title</label><input id="ef_title" autocomplete="off"></div>
+        <div class="form-group"><label>Date</label><input id="ef_date" type="date"></div>
+        <div class="form-group"><label>Venue</label><input id="ef_venue" autocomplete="off"></div>
+        <div class="form-group"><label>Capacity</label><input id="ef_capacity" type="number" autocomplete="off"></div>
+        <div class="form-group"><label>Zones / Prices</label><input id="ef_zones" autocomplete="off"></div>
+        <div class="form-group"><label>Status</label>
+          <select id="ef_status"><option value="upcoming">Upcoming</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select>
+        </div>
+        <div class="form-group"><label>Category</label>
+          <select id="ef_category"><option value="special">Special</option><option value="concert">Concert</option><option value="conference">Conference</option><option value="gala">Gala</option></select>
+        </div>
+        <div class="form-group"><label>Thumbnail URL</label><input id="ef_thumb" autocomplete="off"></div>
+        <div class="form-group"><label>Video URL</label><input id="ef_video" autocomplete="off"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;"><label>Description</label><textarea id="ef_desc"></textarea></div>
+      <div class="form-actions">
+        <button class="btn-save" onclick="saveEdit()">Save Changes</button>
+        <button class="btn-cancel-form" onclick="cancelEdit()">Cancel</button>
+      </div>
+    </div>
+
+    <div id="eventsList"></div>
+  </div>
+
+  <!-- SEAT MAP TAB -->
+  <div class="tab-panel" id="tab-seatmap">
+    <div class="panel-header">
+      <div class="panel-title">Seat Map Overview</div>
+      <select class="search-input" id="smEventFilter" onchange="loadSeatMap()" style="max-width:260px;">
+        <option value="">Select Event…</option>
+      </select>
+    </div>
+    <div id="seatMapView"></div>
   </div>
 </div>
 
-<!-- Confirm dialog -->
-<div class="confirm-dialog" id="confirmDialog">
-  <div class="confirm-box">
-    <h3>Confirm Payment &amp; Send Ticket</h3>
-    <p id="confirmMsg">Send QR ticket to this customer?</p>
-    <div class="confirm-btns">
-      <button class="confirm-no"  id="confirmNo">Cancel</button>
-      <button class="confirm-yes" id="confirmYes">Yes, Send Ticket</button>
+<!-- CONFIRM DIALOG -->
+<div class="dialog" id="confirmDialog">
+  <div class="dialog-box">
+    <h3 id="dlgTitle">Confirm Action</h3>
+    <p id="dlgMsg"></p>
+    <div class="dialog-btns">
+      <button class="dlg-no"  id="dlgNo">Cancel</button>
+      <button class="dlg-yes" id="dlgYes">Confirm</button>
     </div>
   </div>
 </div>
@@ -143,309 +300,537 @@
 <div id="toast"></div>
 
 <script>
-  const WORKER       = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev';
-  const MAX_ATTEMPTS = 5;
-  const LOCKOUT_MS   = 15 * 60 * 1000; // 15 minutes
-  const SESSION_MS   = 2 * 60 * 60 * 1000; // 2 hours
-  const WARN_MS      = 90 * 60 * 1000; // warn at 90 mins
+const WORKER = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev';
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS   = 15 * 60 * 1000;
+const SESSION_MS   = 2  * 60 * 60 * 1000;
 
-  // Token lives in memory only — cleared when tab closes
-  let token        = '';
-  let sessionStart = null;
-  let sessionTick  = null;
-  let pendingConfirm = null; // { btn, eventId, ref, name }
+let token        = '';
+let sessionStart = null;
+let sessionTick  = null;
+let allBookings  = [];
+let allEvents    = [];
+let pendingAction = null;
 
-  const loginScreen  = document.getElementById('loginScreen');
-  const adminScreen  = document.getElementById('adminScreen');
-  const loginError   = document.getElementById('loginError');
-  const bookingsList = document.getElementById('bookingsList');
-  const statsBar     = document.getElementById('statsBar');
-  const toast        = document.getElementById('toast');
+// ── ELEMENTS ────────────────────────────────────────────────
+const loginScreen = document.getElementById('loginScreen');
+const adminScreen = document.getElementById('adminScreen');
+const loginError  = document.getElementById('loginError');
+const lockoutBar  = document.getElementById('lockoutBar');
 
-  // ── RATE LIMITING (stored in sessionStorage — clears on tab close) ──────────
-  function getAttempts() {
-    try {
-      const d = JSON.parse(sessionStorage.getItem('lsm_login') || '{}');
-      return { count: d.count || 0, lockedUntil: d.lockedUntil || 0 };
-    } catch { return { count: 0, lockedUntil: 0 }; }
-  }
+// ── RATE LIMIT ───────────────────────────────────────────────
+function getAttempts() {
+  try { const d=JSON.parse(sessionStorage.getItem('lsm_a')||'{}'); return{count:d.count||0,until:d.until||0}; } catch{return{count:0,until:0};}
+}
+function setAttempts(c,u){ sessionStorage.setItem('lsm_a',JSON.stringify({count:c,until:u})); }
+function checkLockout(){
+  const{count,until}=getAttempts();
+  if(until&&Date.now()<until){ const m=Math.ceil((until-Date.now())/60000); return`Too many attempts. Try again in ${m} min.`; }
+  if(until&&Date.now()>=until) setAttempts(0,0);
+  return null;
+}
+function recordFail(){
+  const{count}=getAttempts(); const n=count+1;
+  if(n>=MAX_ATTEMPTS) setAttempts(n,Date.now()+LOCKOUT_MS);
+  else setAttempts(n,0);
+  return MAX_ATTEMPTS-n;
+}
 
-  function setAttempts(count, lockedUntil) {
-    sessionStorage.setItem('lsm_login', JSON.stringify({ count, lockedUntil }));
-  }
+// ── LOGIN ────────────────────────────────────────────────────
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('adminPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
 
-  function checkLockout() {
-    const { count, lockedUntil } = getAttempts();
-    if (lockedUntil && Date.now() < lockedUntil) {
-      const mins = Math.ceil((lockedUntil - Date.now()) / 60000);
-      return `Too many failed attempts. Try again in ${mins} minute${mins > 1 ? 's' : ''}.`;
+async function doLogin() {
+  const lk = checkLockout();
+  if(lk){ lockoutBar.textContent=lk; lockoutBar.style.display='block'; return; }
+  lockoutBar.style.display='none';
+
+  const pass = document.getElementById('adminPass').value.trim();
+  if(!pass){ loginError.textContent='Enter password.'; return; }
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled=true; btn.textContent='Checking...'; loginError.textContent='';
+
+  try {
+    const res  = await fetch(WORKER+'/admin-bookings', { headers:{'X-Admin-Token':pass} });
+    const data = await res.json();
+
+    if(res.status===401||!data.success){
+      const rem = recordFail();
+      const{until}=getAttempts();
+      loginError.textContent = until ? 'Too many attempts. Locked for 15 min.' : `Wrong password. ${rem} attempt${rem!==1?'s':''} left.`;
+      document.getElementById('adminPass').value='';
+      btn.disabled=false; btn.textContent='Login'; return;
     }
-    if (lockedUntil && Date.now() >= lockedUntil) {
-      setAttempts(0, 0); // reset after lockout expires
-    }
-    return null;
-  }
 
-  function recordFailedAttempt() {
-    const { count } = getAttempts();
-    const newCount = count + 1;
-    if (newCount >= MAX_ATTEMPTS) {
-      setAttempts(newCount, Date.now() + LOCKOUT_MS);
-    } else {
-      setAttempts(newCount, 0);
-    }
-    return MAX_ATTEMPTS - newCount;
-  }
+    sessionStorage.removeItem('lsm_a');
+    token = pass;
+    sessionStart = Date.now();
+    document.getElementById('adminPass').value='';
+    loginScreen.style.display='none';
+    adminScreen.style.display='block';
+    startSessionTimer();
+    processBookingsData(data);
+    loadEvents();
+  } catch(e){ loginError.textContent='Network error.'; btn.disabled=false; btn.textContent='Login'; }
+}
 
-  function clearAttempts() { sessionStorage.removeItem('lsm_login'); }
+// ── SESSION ──────────────────────────────────────────────────
+function startSessionTimer(){
+  clearInterval(sessionTick);
+  sessionTick = setInterval(()=>{
+    const rem = SESSION_MS - (Date.now()-sessionStart);
+    if(rem<=0){ forceLogout('Session expired.'); return; }
+    const m=Math.floor(rem/60000), s=Math.floor((rem%60000)/1000);
+    const el=document.getElementById('sessionTime');
+    if(el) el.textContent=`${m}:${String(s).padStart(2,'0')}`;
+    if(rem<30*60*1000&&rem>29*60*1000+500) showToast('Session expires in 30 min.','err');
+  },1000);
+}
 
-  // ── LOGIN ────────────────────────────────────────────────────────────────────
-  document.getElementById('loginBtn').addEventListener('click', doLogin);
-  document.getElementById('adminPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+function forceLogout(msg){
+  clearInterval(sessionTick); token='';
+  loginScreen.style.display='flex'; adminScreen.style.display='none';
+  loginError.textContent=msg||''; document.getElementById('adminPass').value='';
+}
 
-  async function doLogin() {
-    // Check lockout first
-    const lockMsg = checkLockout();
-    if (lockMsg) { loginError.textContent = lockMsg; return; }
+document.getElementById('logoutBtn').addEventListener('click',()=>forceLogout(''));
 
-    const pass = document.getElementById('adminPass').value.trim();
-    if (!pass) { loginError.textContent = 'Enter password.'; return; }
+let hiddenAt=null;
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden) hiddenAt=Date.now();
+  else if(hiddenAt&&token&&Date.now()-hiddenAt>30*60*1000) forceLogout('Logged out due to inactivity.');
+});
 
-    const btn = document.getElementById('loginBtn');
-    btn.disabled = true; btn.textContent = 'Checking...';
-    loginError.textContent = '';
+// ── TABS ─────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
 
-    try {
-      const res  = await fetch(WORKER + '/admin-bookings', { headers: { 'X-Admin-Token': pass } });
-      const data = await res.json();
+document.getElementById('refreshBtn').addEventListener('click', refreshAll);
 
-      if (res.status === 401 || !data.success) {
-        const remaining = recordFailedAttempt();
-        const { lockedUntil } = getAttempts();
-        if (lockedUntil) {
-          loginError.textContent = `Too many failed attempts. Locked for 15 minutes.`;
-        } else {
-          loginError.textContent = `Wrong password. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`;
-        }
-        btn.disabled = false; btn.textContent = 'Login';
-        document.getElementById('adminPass').value = '';
-        return;
-      }
+async function refreshAll(){
+  await Promise.all([loadBookings(), loadEvents()]);
+}
 
-      clearAttempts();
-      token = pass;
-      sessionStart = Date.now();
-      loginScreen.style.display = 'none';
-      adminScreen.style.display = 'block';
-      document.getElementById('adminPass').value = ''; // clear password field
-      startSessionTimer();
-      render(data);
-    } catch(e) {
-      loginError.textContent = 'Network error.';
-      btn.disabled = false; btn.textContent = 'Login';
-    }
-  }
+// ── BOOKINGS ─────────────────────────────────────────────────
+async function loadBookings(){
+  document.getElementById('bookingsList').innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Loading...</div>';
+  try{
+    const res  = await fetch(WORKER+'/admin-bookings?status=all', { headers:{'X-Admin-Token':token} });
+    if(res.status===401){ forceLogout('Session expired.'); return; }
+    const data = await res.json();
+    processBookingsData(data);
+  } catch(e){ showToast('Failed to load bookings.','err'); }
+}
 
-  // ── SESSION TIMER ────────────────────────────────────────────────────────────
-  function startSessionTimer() {
-    clearInterval(sessionTick);
-    sessionTick = setInterval(() => {
-      const elapsed = Date.now() - sessionStart;
-      const remaining = SESSION_MS - elapsed;
+function processBookingsData(data){
+  allBookings = data.pending || [];
+  const evTitles = data.eventTitles || {};
 
-      if (remaining <= 0) {
-        forceLogout('Session expired. Please login again.');
-        return;
-      }
+  // Stats
+  const total   = allBookings.length;
+  const pending = allBookings.filter(b=>b.status==='Pending Payment').length;
+  const sent    = allBookings.filter(b=>b.status==='Ticket Sent').length;
+  const checked = allBookings.filter(b=>String(b.status||'').startsWith('Checked In')).length;
+  const amt     = allBookings.filter(b=>b.status==='Pending Payment').reduce((s,b)=>s+Number(b.total||0),0);
 
-      const mins = Math.floor(remaining / 60000);
-      const secs = Math.floor((remaining % 60000) / 1000);
-      const timerEl = document.getElementById('sessionTimer');
-      if (timerEl) timerEl.textContent = `Session expires in ${mins}:${String(secs).padStart(2,'0')}`;
+  document.getElementById('bkStats').innerHTML=`
+    <div class="stat-pill"><div class="stat-num">${total}</div><div class="stat-lbl">Total</div></div>
+    <div class="stat-pill"><div class="stat-num">${pending}</div><div class="stat-lbl">Pending</div></div>
+    <div class="stat-pill"><div class="stat-num">${sent}</div><div class="stat-lbl">Sent</div></div>
+    <div class="stat-pill"><div class="stat-num">${checked}</div><div class="stat-lbl">Checked In</div></div>
+    <div class="stat-pill"><div class="stat-num">$${amt.toFixed(0)}</div><div class="stat-lbl">Pending SGD</div></div>
+  `;
 
-      // Warn at 90 mins
-      if (elapsed >= WARN_MS && elapsed < WARN_MS + 1000) {
-        showToast('Session expires in 30 minutes. Save your work.', 'error');
-      }
-    }, 1000);
-  }
-
-  function forceLogout(msg) {
-    clearInterval(sessionTick);
-    token = '';
-    loginScreen.style.display = 'flex';
-    adminScreen.style.display = 'none';
-    loginError.textContent = msg || '';
-    document.getElementById('adminPass').value = '';
-  }
-
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    clearInterval(sessionTick);
-    forceLogout('');
+  // Populate event filter
+  const evFilter = document.getElementById('bkEventFilter');
+  const curVal   = evFilter.value;
+  evFilter.innerHTML='<option value="">All Events</option>';
+  [...new Set(allBookings.map(b=>b.eventId))].forEach(eid=>{
+    const opt=document.createElement('option');
+    opt.value=eid; opt.textContent=(evTitles[eid]?.title||eid);
+    if(eid===curVal) opt.selected=true;
+    evFilter.appendChild(opt);
   });
 
-  // Auto-logout on tab hidden for >30 mins
-  let hiddenAt = null;
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { hiddenAt = Date.now(); }
-    else if (hiddenAt && token && Date.now() - hiddenAt > 30 * 60 * 1000) {
-      forceLogout('Session expired due to inactivity.');
-    }
+  // Store titles on bookings for display
+  allBookings.forEach(b=>{ b._eventTitle = evTitles[b.eventId]?.title || b.eventId; });
+
+  filterBookings();
+}
+
+function filterBookings(){
+  const q       = (document.getElementById('bkSearch').value||'').toLowerCase();
+  const evF     = document.getElementById('bkEventFilter').value;
+  const stF     = document.getElementById('bkStatusFilter').value;
+
+  let filtered = allBookings.filter(b=>{
+    if(evF && b.eventId!==evF) return false;
+    if(stF && b.status!==stF) return false;
+    if(q && !b.name.toLowerCase().includes(q) && !b.email.toLowerCase().includes(q)) return false;
+    return true;
   });
 
-  // ── LOAD BOOKINGS ────────────────────────────────────────────────────────────
-  document.getElementById('refreshBtn').addEventListener('click', loadBookings);
+  renderBookings(filtered);
+}
 
-  async function loadBookings() {
-    bookingsList.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div>Loading...</div>';
-    statsBar.innerHTML = '';
-    try {
-      const res  = await fetch(WORKER + '/admin-bookings', { headers: { 'X-Admin-Token': token } });
-      if (res.status === 401) { forceLogout('Session expired.'); return; }
-      const data = await res.json();
-      render(data);
-    } catch(e) { showToast('Network error.', 'error'); }
-  }
+function renderBookings(list){
+  const el = document.getElementById('bookingsList');
+  if(!list.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">&#10003;</div><div class="empty-text">No bookings match this filter.</div></div>'; return; }
 
-  function render(data) {
-    const { pending, eventTitles } = data;
-    const totalAmt = pending.reduce((s, b) => s + Number(b.total || 0), 0);
-    statsBar.innerHTML = `
-      <div class="stat-pill"><div class="stat-num">${pending.length}</div><div class="stat-label">Pending</div></div>
-      <div class="stat-pill"><div class="stat-num">SGD $${totalAmt.toFixed(0)}</div><div class="stat-label">Total Pending</div></div>
-      <div class="stat-pill"><div class="stat-num">${[...new Set(pending.map(b=>b.eventId))].length}</div><div class="stat-label">Events</div></div>
-    `;
+  // Group by event
+  const groups={};
+  list.forEach(b=>{ if(!groups[b.eventId]) groups[b.eventId]=[]; groups[b.eventId].push(b); });
 
-    if (!pending.length) {
-      bookingsList.innerHTML = '<div class="empty-state"><div class="empty-icon">&#10003;</div><div class="empty-text">No pending payments. All confirmed.</div></div>';
-      return;
-    }
+  let html='';
+  Object.entries(groups).forEach(([eid,bookings])=>{
+    html+=`<div class="event-group-label">${esc(bookings[0]._eventTitle||eid)} &nbsp;<span style="color:#444">(${bookings.length})</span></div>`;
+    bookings.forEach(b=>{
+      const seats=(b.seats||'').split(',').map(s=>s.trim()).filter(Boolean);
+      const safeRef=(b.ref||'').replace(/[^a-zA-Z0-9_-]/g,'_');
+      const safeEid=(b.eventId||'').replace(/[^a-zA-Z0-9_-]/g,'_');
+      let time=''; try{time=new Date(b.timestamp).toLocaleString('en-SG',{timeZone:'Asia/Singapore',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){}
+      const isPending = b.status==='Pending Payment';
+      const isSent    = b.status==='Ticket Sent'||String(b.status||'').startsWith('Checked In');
+      const statusClass = isPending?'badge-pending':isSent?'badge-sent':b.status==='Paid'?'badge-paid':'badge-checked';
 
-    const groups = {};
-    pending.forEach(b => { if (!groups[b.eventId]) groups[b.eventId] = []; groups[b.eventId].push(b); });
-
-    let html = '';
-    Object.entries(groups).forEach(([eid, bookings]) => {
-      const ev    = eventTitles[eid] || {};
-      const title = ev.title || eid;
-      const date  = ev.date  || '';
-      html += `<div class="event-group">
-        <div class="event-group-header">
-          <div class="event-group-title">${esc(title)}</div>
-          ${date ? `<div class="event-group-date">${esc(date)}</div>` : ''}
-          <div class="event-badge">${bookings.length} pending</div>
-        </div>`;
-
-      bookings.forEach(b => {
-        const seats = b.seats.split(',').map(s=>s.trim()).filter(Boolean);
-        const safeRef = b.ref.replace(/[^a-zA-Z0-9_-]/g,'_');
-        const safeEid = eid.replace(/[^a-zA-Z0-9_-]/g,'_');
-        let time = '';
-        try { time = new Date(b.timestamp).toLocaleString('en-SG',{timeZone:'Asia/Singapore',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); } catch(e){}
-        html += `<div class="booking-card" id="card-${safeRef}">
-          <div class="booking-info">
-            <div class="booking-name">${esc(b.name)}</div>
-            <div class="booking-contact">${esc(b.email)} &nbsp;&middot;&nbsp; ${esc(b.phone)}</div>
-            <div class="booking-seats">${seats.map(s=>`<span class="seat-chip">${esc(s)}</span>`).join('')}</div>
-            <div class="booking-ref">${esc(b.ref)}</div>
-          </div>
-          <div class="booking-meta">
-            <div class="booking-total">SGD $${esc(b.total)}</div>
-            <div class="booking-time">${time}</div>
-          </div>
-          <button class="confirm-btn" id="btn-${safeRef}"
-            data-eventid="${esc(eid)}"
-            data-ref="${esc(b.ref)}"
-            data-name="${esc(b.name)}"
-            onclick="confirmBooking(this)">
-            &#10003; Confirm &amp; Send Ticket
-          </button>
-        </div>`;
-      });
-      html += '</div>';
+      html+=`<div class="booking-card" id="card-${safeRef}">
+        <div class="bk-info">
+          <div class="bk-name">${esc(b.name)}</div>
+          <div class="bk-contact">${esc(b.email)} &middot; ${esc(b.phone)}</div>
+          <div class="bk-seats">${seats.map(s=>`<span class="seat-chip">${esc(s)}</span>`).join('')}</div>
+          <div class="bk-ref">${esc(b.ref)}</div>
+        </div>
+        <div class="bk-meta">
+          <div class="bk-total">SGD $${esc(b.total)}</div>
+          <div style="margin-top:4px"><span class="badge ${statusClass}">${esc(b.status)}</span></div>
+          <div class="bk-time">${time}</div>
+        </div>
+        <div class="bk-actions">
+          ${isPending?`<button class="action-btn btn-confirm" id="btn-${safeRef}" data-eventid="${esc(b.eventId)}" data-ref="${esc(b.ref)}" data-name="${esc(b.name)}" onclick="askConfirm(this,'confirm')">&#10003; Confirm &amp; Send</button>`:''}
+          ${isSent?`<button class="action-btn btn-resend" data-eventid="${esc(b.eventId)}" data-ref="${esc(b.ref)}" data-name="${esc(b.name)}" onclick="askConfirm(this,'resend')">&#8635; Resend Ticket</button>`:''}
+        </div>
+      </div>`;
     });
-    bookingsList.innerHTML = html;
-  }
-
-  // ── CONFIRM DIALOG ──────────────────────────────────────────────────────────
-  document.getElementById('confirmNo').addEventListener('click', () => {
-    document.getElementById('confirmDialog').classList.remove('show');
-    pendingConfirm = null;
   });
+  el.innerHTML=html;
+}
 
-  document.getElementById('confirmYes').addEventListener('click', async () => {
-    document.getElementById('confirmDialog').classList.remove('show');
-    if (!pendingConfirm) return;
-    const { btn, eventId, ref, name } = pendingConfirm;
-    pendingConfirm = null;
-    await doConfirm(btn, eventId, ref, name);
+// ── EVENTS ───────────────────────────────────────────────────
+async function loadEvents(){
+  document.getElementById('eventsList').innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Loading...</div>';
+  try{
+    const res  = await fetch(WORKER+'/admin-events', { headers:{'X-Admin-Token':token} });
+    if(res.status===401){ forceLogout('Session expired.'); return; }
+    const data = await res.json();
+    allEvents = data.events || [];
+    renderEvents(allEvents);
+    populateSeatMapFilter(allEvents);
+  } catch(e){ showToast('Failed to load events.','err'); }
+}
+
+function renderEvents(events){
+  const el=document.getElementById('eventsList');
+  if(!events.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">&#127916;</div><div class="empty-text">No events yet. Add one above.</div></div>'; return; }
+
+  let html='';
+  events.forEach(ev=>{
+    const id=ev['Event ID']||'';
+    const title=ev['Event Title']||'';
+    const date=ev['Date']||'';
+    const venue=ev['Venue']||'';
+    const status=(ev['Status']||'upcoming').toLowerCase();
+    const bkStatus=(ev['Booking Status']||'closed').toLowerCase();
+    const isOpen=bkStatus==='open';
+
+    html+=`<div class="event-card" id="evcard-${esc(id)}">
+      <div class="ev-header">
+        <div class="ev-info">
+          <div class="ev-title">${esc(title)}</div>
+          <div class="ev-meta">${date?esc(date)+' &nbsp;&middot;&nbsp; ':''} ${esc(venue)}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+            <span class="badge badge-${status}">${status}</span>
+            <span class="badge ${isOpen?'badge-open':'badge-closed'}">${isOpen?'Bookings Open':'Bookings Closed'}</span>
+          </div>
+          <div class="ev-id">${esc(id)}</div>
+        </div>
+        <div class="ev-actions">
+          <button class="toggle-btn ${isOpen?'toggle-close':'toggle-open'}"
+            data-id="${esc(id)}" data-current="${bkStatus}"
+            onclick="askConfirm(this,'toggle')">
+            ${isOpen?'Close Bookings':'Open Bookings'}
+          </button>
+          <button class="btn-edit btn-sm"
+            data-id="${esc(id)}"
+            onclick="openEdit('${esc(id)}')">Edit</button>
+        </div>
+      </div>
+    </div>`;
   });
+  el.innerHTML=html;
+}
 
-  // Tap outside dialog to cancel
-  document.getElementById('confirmDialog').addEventListener('click', e => {
-    if (e.target === document.getElementById('confirmDialog')) {
-      document.getElementById('confirmDialog').classList.remove('show');
-      pendingConfirm = null;
-    }
+function toggleAddForm(){
+  const f=document.getElementById('addEventForm');
+  f.classList.toggle('open');
+  if(f.classList.contains('open')) document.getElementById('editEventForm').classList.remove('open');
+}
+
+function cancelEdit(){
+  document.getElementById('editEventForm').classList.remove('open');
+}
+
+function openEdit(id){
+  const ev = allEvents.find(e=>(e['Event ID']||'')=== id);
+  if(!ev) return;
+  document.getElementById('ef_id').value    = id;
+  document.getElementById('ef_title').value  = ev['Event Title']   ||'';
+  document.getElementById('ef_date').value   = ev['Date']           ||'';
+  document.getElementById('ef_venue').value  = ev['Venue']          ||'';
+  document.getElementById('ef_capacity').value=ev['Capacity']       ||'';
+  document.getElementById('ef_zones').value  = ev['Zones / Prices'] ||'';
+  document.getElementById('ef_status').value = (ev['Status']        ||'upcoming').toLowerCase();
+  document.getElementById('ef_category').value=(ev['Category']      ||'special').toLowerCase();
+  document.getElementById('ef_thumb').value  = ev['Thumbnail']      ||'';
+  document.getElementById('ef_video').value  = ev['Video URL']      ||'';
+  document.getElementById('ef_desc').value   = ev['Description']    ||'';
+  document.getElementById('editEventForm').classList.add('open');
+  document.getElementById('addEventForm').classList.remove('open');
+  document.getElementById('editEventForm').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function addEvent(){
+  const id    = document.getElementById('f_id').value.trim();
+  const title = document.getElementById('f_title').value.trim();
+  if(!id||!title){ showToast('Event ID and title are required.','err'); return; }
+
+  const payload = {
+    id, title,
+    date:          document.getElementById('f_date').value,
+    venue:         document.getElementById('f_venue').value.trim(),
+    capacity:      document.getElementById('f_capacity').value,
+    zones:         document.getElementById('f_zones').value.trim(),
+    status:        document.getElementById('f_status').value,
+    bookingStatus: document.getElementById('f_booking').value,
+    category:      document.getElementById('f_category').value,
+    thumbnail:     document.getElementById('f_thumb').value.trim(),
+    videoUrl:      document.getElementById('f_video').value.trim(),
+    description:   document.getElementById('f_desc').value.trim()
+  };
+
+  try{
+    const res  = await fetch(WORKER+'/admin-events',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':token},body:JSON.stringify(payload)});
+    const data = await res.json();
+    if(data.success){ showToast('Event added!','ok'); document.getElementById('addEventForm').classList.remove('open'); loadEvents(); }
+    else showToast(data.error||'Failed to add event.','err');
+  } catch(e){ showToast('Network error.','err'); }
+}
+
+async function saveEdit(){
+  const id = document.getElementById('ef_id').value;
+  const payload = {
+    id,
+    title:       document.getElementById('ef_title').value.trim(),
+    date:        document.getElementById('ef_date').value,
+    venue:       document.getElementById('ef_venue').value.trim(),
+    capacity:    document.getElementById('ef_capacity').value,
+    zones:       document.getElementById('ef_zones').value.trim(),
+    status:      document.getElementById('ef_status').value,
+    category:    document.getElementById('ef_category').value,
+    thumbnail:   document.getElementById('ef_thumb').value.trim(),
+    videoUrl:    document.getElementById('ef_video').value.trim(),
+    description: document.getElementById('ef_desc').value.trim()
+  };
+  try{
+    const res  = await fetch(WORKER+'/admin-events',{method:'PATCH',headers:{'Content-Type':'application/json','X-Admin-Token':token},body:JSON.stringify(payload)});
+    const data = await res.json();
+    if(data.success){ showToast('Event updated!','ok'); cancelEdit(); loadEvents(); }
+    else showToast(data.error||'Failed to update.','err');
+  } catch(e){ showToast('Network error.','err'); }
+}
+
+// ── SEAT MAP ─────────────────────────────────────────────────
+function populateSeatMapFilter(events){
+  const sel=document.getElementById('smEventFilter');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Select Event...</option>';
+  events.forEach(ev=>{
+    const opt=document.createElement('option');
+    opt.value=ev['Event ID']||'';
+    opt.textContent=ev['Event Title']||ev['Event ID']||'';
+    if(opt.value===cur) opt.selected=true;
+    sel.appendChild(opt);
   });
+}
 
-  function confirmBooking(btn) {
-    const eventId = btn.getAttribute('data-eventid');
-    const ref     = btn.getAttribute('data-ref');
-    const name    = btn.getAttribute('data-name');
+async function loadSeatMap(){
+  const eventId = document.getElementById('smEventFilter').value;
+  const el      = document.getElementById('seatMapView');
+  if(!eventId){ el.innerHTML='<div class="empty-state"><div class="empty-icon">&#127922;</div><div class="empty-text">Select an event to view seat map.</div></div>'; return; }
 
-    if (!eventId || !ref) {
-      showToast('Missing booking data. Refresh the page.', 'error');
-      return;
-    }
+  el.innerHTML='<div class="spinner-wrap"><div class="spinner"></div>Loading...</div>';
 
-    // Show confirm dialog
-    pendingConfirm = { btn, eventId, ref, name };
-    document.getElementById('confirmMsg').textContent =
-      `Send QR ticket to ${name}? This will mark the booking as paid.`;
-    document.getElementById('confirmDialog').classList.add('show');
-  }
+  try{
+    // Get booked seats from Worker
+    const res  = await fetch(`${WORKER}?eventId=${encodeURIComponent(eventId)}`);
+    const data = await res.json();
+    const booked = new Set(data.bookedSeats||[]);
 
-  async function doConfirm(btn, eventId, ref, name) {
-    const safeRef = (ref || '').replace(/[^a-zA-Z0-9_-]/g,'_');
-    const card    = document.getElementById('card-' + safeRef);
+    // Get seatmap.json
+    const smRes  = await fetch('/data/seatmap.json').catch(()=>null);
+    if(!smRes||!smRes.ok){ el.innerHTML='<div class="empty-state"><div class="empty-text">Could not load seat map file.</div></div>'; return; }
+    const seatmap = await smRes.json();
+    const plan    = seatmap.SEATPLAN;
+    const zones   = seatmap.zones||{};
 
-    btn.disabled = true; btn.textContent = 'Sending...';
-    try {
-      const res  = await fetch(WORKER + '/admin-confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
-        body: JSON.stringify({ eventId, ref })
+    if(!plan){ el.innerHTML='<div class="empty-state"><div class="empty-text">No seat plan found in seatmap.json.</div></div>'; return; }
+
+    // Count stats
+    let total=0,bookedCount=0;
+    const zoneStats={};
+
+    Object.keys(plan).forEach(rowKey=>{
+      if(!/^[A-Z]$/.test(rowKey)) return;
+      (plan[rowKey]||[]).forEach(cell=>{
+        if(!cell||cell==='AISLE'||(typeof cell==='object'&&cell.type)) return;
+        const seatNum = typeof cell==='object'&&cell.seat!=null?String(cell.seat):String(cell);
+        const zoneKey = typeof cell==='object'?cell.zone:null;
+        if(!seatNum) return;
+        const code=`${rowKey}${seatNum}`;
+        total++;
+        if(booked.has(code)){
+          bookedCount++;
+          if(zoneKey){ zoneStats[zoneKey]=zoneStats[zoneKey]||{total:0,booked:0}; zoneStats[zoneKey].booked++; }
+        }
+        if(zoneKey){ zoneStats[zoneKey]=zoneStats[zoneKey]||{total:0,booked:0}; zoneStats[zoneKey].total++; }
       });
+    });
 
-      if (res.status === 401) { forceLogout('Session expired.'); return; }
+    const available=total-bookedCount;
+    const pct=total?Math.round(bookedCount/total*100):0;
 
-      const data = await res.json();
-      if (data.success) {
-        btn.classList.add('done'); btn.textContent = '&#10003; Ticket Sent';
-        if (card) card.style.opacity = '0.45';
-        showToast('Ticket sent to ' + name, 'success');
-      } else {
-        btn.classList.add('err'); btn.textContent = 'Failed';
-        btn.disabled = false;
-        showToast(data.error || 'Something went wrong.', 'error');
-      }
-    } catch(e) {
-      btn.classList.add('err'); btn.textContent = 'Network error';
-      btn.disabled = false;
-      showToast('Network error. Check connection.', 'error');
+    let html=`<div class="stats-row">
+      <div class="stat-pill"><div class="stat-num">${total}</div><div class="stat-lbl">Total Seats</div></div>
+      <div class="stat-pill"><div class="stat-num">${bookedCount}</div><div class="stat-lbl">Booked</div></div>
+      <div class="stat-pill"><div class="stat-num">${available}</div><div class="stat-lbl">Available</div></div>
+      <div class="stat-pill"><div class="stat-num">${pct}%</div><div class="stat-lbl">Sold</div></div>
+    </div>`;
+
+    // Zone breakdown
+    if(Object.keys(zoneStats).length){
+      html+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">';
+      Object.entries(zoneStats).forEach(([zk,zv])=>{
+        const z=zones[zk]||{};
+        const zpct=zv.total?Math.round(zv.booked/zv.total*100):0;
+        html+=`<div class="stat-pill" style="min-width:140px;">
+          <div style="font-size:.7rem;color:${z.color||'#c9a227'};font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;">${zk}</div>
+          <div class="stat-num" style="font-size:1.2rem;">${zv.booked}/${zv.total}</div>
+          <div class="stat-lbl">${zpct}% sold${z.price?` &middot; $${z.price}`:''}</div>
+        </div>`;
+      });
+      html+='</div>';
     }
-  }
 
-  let toastTimer;
-  function showToast(msg, type) {
-    toast.textContent = msg; toast.className = 'show ' + (type||'success');
-    clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ toast.className=''; }, 3500);
-  }
+    // Booked seat list
+    if(booked.size){
+      html+=`<div style="margin-top:8px;"><div class="event-group-label">Booked Seats (${booked.size})</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">`;
+      [...booked].sort().forEach(s=>{ html+=`<span class="seat-chip" style="background:#7b1d1d;color:#f87171;">${esc(s)}</span>`; });
+      html+='</div></div>';
+    }
 
-  function esc(s) {
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    el.innerHTML=html;
+  } catch(e){ showToast('Error loading seat map.','err'); el.innerHTML='<div class="empty-state"><div class="empty-text">Error loading data.</div></div>'; }
+}
+
+// ── CONFIRM DIALOG ───────────────────────────────────────────
+document.getElementById('dlgNo').addEventListener('click',()=>{ document.getElementById('confirmDialog').classList.remove('show'); pendingAction=null; });
+document.getElementById('dlgYes').addEventListener('click',()=>{
+  document.getElementById('confirmDialog').classList.remove('show');
+  if(pendingAction) pendingAction();
+  pendingAction=null;
+});
+document.getElementById('confirmDialog').addEventListener('click',e=>{
+  if(e.target===document.getElementById('confirmDialog')){ document.getElementById('confirmDialog').classList.remove('show'); pendingAction=null; }
+});
+
+function askConfirm(btn, type){
+  const eventId = btn.getAttribute('data-eventid');
+  const ref     = btn.getAttribute('data-ref');
+  const name    = btn.getAttribute('data-name');
+  const id      = btn.getAttribute('data-id');
+  const current = btn.getAttribute('data-current');
+
+  if(type==='confirm'){
+    document.getElementById('dlgTitle').textContent='Confirm Payment & Send Ticket';
+    document.getElementById('dlgMsg').textContent=`Send QR ticket to ${name}? This marks the booking as paid.`;
+    pendingAction=()=>doConfirm(btn,eventId,ref,name);
+  } else if(type==='resend'){
+    document.getElementById('dlgTitle').textContent='Resend Ticket';
+    document.getElementById('dlgMsg').textContent=`Resend QR ticket to ${name}?`;
+    pendingAction=()=>doResend(btn,eventId,ref,name);
+  } else if(type==='toggle'){
+    const willOpen = current==='closed';
+    document.getElementById('dlgTitle').textContent = willOpen?'Open Bookings':'Close Bookings';
+    document.getElementById('dlgMsg').textContent   = willOpen?`Open bookings for this event? Customers will be able to book seats.`:`Close bookings for this event? The Book Seat button will be hidden.`;
+    pendingAction=()=>doToggle(btn,id,current);
   }
+  document.getElementById('confirmDialog').classList.add('show');
+}
+
+async function doConfirm(btn,eventId,ref,name){
+  const safeRef=(ref||'').replace(/[^a-zA-Z0-9_-]/g,'_');
+  const card=document.getElementById('card-'+safeRef);
+  btn.disabled=true; btn.textContent='Sending...';
+  try{
+    const res=await fetch(WORKER+'/admin-confirm',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':token},body:JSON.stringify({eventId,ref})});
+    if(res.status===401){forceLogout('Session expired.');return;}
+    const data=await res.json();
+    if(data.success){ btn.className='action-btn btn-done'; btn.textContent='Ticket Sent'; if(card) card.style.opacity='.45'; showToast('Ticket sent to '+name,'ok'); }
+    else{ btn.className='action-btn btn-err'; btn.textContent='Failed'; btn.disabled=false; showToast(data.error||'Error.','err'); }
+  } catch(e){ btn.className='action-btn btn-err'; btn.textContent='Network error'; btn.disabled=false; showToast('Network error.','err'); }
+}
+
+async function doResend(btn,eventId,ref,name){
+  btn.disabled=true; btn.textContent='Sending...';
+  try{
+    const res=await fetch(WORKER+'/admin-resend',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':token},body:JSON.stringify({eventId,ref})});
+    if(res.status===401){forceLogout('Session expired.');return;}
+    const data=await res.json();
+    if(data.success){ btn.disabled=false; btn.textContent='&#8635; Resend Ticket'; showToast('Ticket resent to '+name,'ok'); }
+    else{ btn.disabled=false; showToast(data.error||'Error.','err'); }
+  } catch(e){ btn.disabled=false; showToast('Network error.','err'); }
+}
+
+async function doToggle(btn,id,current){
+  const willOpen = current==='closed';
+  const newStatus = willOpen?'open':'closed';
+  btn.disabled=true; btn.textContent='Updating...';
+  try{
+    const res=await fetch(WORKER+'/admin-events',{method:'PATCH',headers:{'Content-Type':'application/json','X-Admin-Token':token},body:JSON.stringify({id,bookingStatus:newStatus})});
+    if(res.status===401){forceLogout('Session expired.');return;}
+    const data=await res.json();
+    if(data.success){ showToast(`Bookings ${newStatus} for ${id}`,'ok'); loadEvents(); }
+    else{ btn.disabled=false; showToast(data.error||'Error.','err'); }
+  } catch(e){ btn.disabled=false; showToast('Network error.','err'); }
+}
+
+// ── UTILS ────────────────────────────────────────────────────
+let toastT;
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='show '+(type||'ok');
+  clearTimeout(toastT); toastT=setTimeout(()=>{t.className='';},3500);
+}
+
+function esc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 </script>
 </body>
 </html>

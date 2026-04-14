@@ -364,20 +364,35 @@ const ProjectLoader = {
     
     async loadData() {
         this.showLoading();
-        
+
+        // Live Events page — pull from Worker instead of JSON
+        const isLiveEvents = this.source && this.source.indexOf('live-events') !== -1;
+
+        if (isLiveEvents) {
+            try {
+                const WORKER_EVENTS = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev/events';
+                const response = await fetch(WORKER_EVENTS);
+                if (!response.ok) throw new Error('Failed to load events from Worker');
+                const json = await response.json();
+                this.data = json.events || [];
+                this.render();
+                return;
+            } catch (error) {
+                console.error('Error loading events from Worker:', error);
+                this.showError();
+                return;
+            }
+        }
+
+        // Other pages (corporate, film) — use JSON files as before
         try {
             const response = await fetch(this.source);
             if (!response.ok) throw new Error('Failed to load data');
-            
             const json = await response.json();
-            
-            // Handle different JSON structures
             this.data = json.events || json.projects || json.films || [];
             this.render();
         } catch (error) {
             console.error('Error loading projects from JSON, using fallback data:', error);
-            
-            // Use fallback data for local file:// viewing
             const fallback = FallbackData[this.source];
             if (fallback) {
                 this.data = fallback.events || fallback.projects || fallback.films || [];
@@ -455,7 +470,7 @@ const ProjectLoader = {
     
         // Show booking button only on the Live Events page
         const isLiveEvents = this.source && this.source.indexOf('live-events') !== -1;
-        const isBookable   = isLiveEvents && item.status === 'upcoming';
+        const isBookable   = isLiveEvents && item.bookingStatus === 'open';
 
         const bookingButton = isBookable ? `
                 <div class="project-actions" style="margin-top: 1rem;">
@@ -633,4 +648,3 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 window.addEventListener('load', () => {
     document.body.classList.add('loaded');
 });
-
