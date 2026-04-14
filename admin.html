@@ -208,7 +208,11 @@
             <div class="booking-total">SGD $${esc(b.total)}</div>
             <div class="booking-time">${time}</div>
           </div>
-          <button class="confirm-btn" id="btn-${safeRef}" onclick="confirm('${safeEid}','${safeRef}','${esc(b.ref)}','${esc(b.name)}')">
+          <button class="confirm-btn" id="btn-${safeRef}"
+            data-eventid="${esc(eid)}"
+            data-ref="${esc(b.ref)}"
+            data-name="${esc(b.name)}"
+            onclick="confirmBooking(this)">
             &#10003; Confirm &amp; Send Ticket
           </button>
         </div>`;
@@ -218,21 +222,24 @@
     bookingsList.innerHTML = html;
   }
 
-  async function confirm(safeEid, safeRef, realRef, name) {
-    const btn  = document.getElementById('btn-' + safeRef);
-    const card = document.getElementById('card-' + safeRef);
-    const realEid = safeEid.replace(/_/g, '-');
+  async function confirmBooking(btn) {
+    const eventId = btn.dataset.eventid;
+    const ref     = btn.dataset.ref;
+    const name    = btn.dataset.name;
+    const safeRef = ref.replace(/[^a-zA-Z0-9_-]/g,'_');
+    const card    = document.getElementById('card-' + safeRef);
+
     btn.disabled = true; btn.textContent = 'Sending...';
     try {
       const res  = await fetch(WORKER + '/admin-confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
-        body: JSON.stringify({ eventId: realEid, ref: realRef })
+        body: JSON.stringify({ eventId, ref })
       });
       const data = await res.json();
       if (data.success) {
         btn.classList.add('done'); btn.textContent = 'Ticket Sent';
-        card.style.opacity = '0.45';
+        if (card) card.style.opacity = '0.45';
         showToast('Ticket sent to ' + name, 'success');
       } else {
         btn.classList.add('err'); btn.textContent = 'Failed';
@@ -242,7 +249,7 @@
     } catch(e) {
       btn.classList.add('err'); btn.textContent = 'Network error';
       btn.disabled = false;
-      showToast('Network error.', 'error');
+      showToast('Network error. Check connection.', 'error');
     }
   }
 
