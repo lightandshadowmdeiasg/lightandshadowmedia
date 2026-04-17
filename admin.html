@@ -158,9 +158,22 @@
     .sm-save-bar{display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)}
     .sm-preview{background:var(--dark2);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;margin-top:16px;font-size:.78rem;color:var(--muted);line-height:1.8}
     .sm-preview .zone-chip{display:inline-block;border-radius:4px;padding:2px 8px;font-size:.72rem;font-weight:700;margin:2px}
-    .sm-seat{width:18px;height:18px;border-radius:3px;border:1px solid #444;font-size:.55rem;font-weight:700;cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .1s;line-height:1}
-    .sm-seat:hover{opacity:.75}
-    .sm-seat.selected{outline:2px solid #fff;outline-offset:1px}
+    .sm-seat{
+      width:18px;height:18px;border-radius:3px;
+      border:1.5px solid rgba(0,0,0,0.25);
+      font-size:.55rem;font-weight:700;cursor:pointer;padding:0;
+      display:inline-flex;align-items:center;justify-content:center;
+      flex-shrink:0;line-height:1;
+      background-color:var(--zone-color,#D5D8DC);
+      color:#000;
+      transition:transform .15s ease, box-shadow .15s ease;
+    }
+    .sm-seat:hover{transform:scale(1.18);box-shadow:0 0 8px rgba(201,162,39,0.7);}
+    .sm-seat.selected{outline:2px solid #fff;outline-offset:1px;transform:scale(1.18);}
+    .sm-seat.sm-unavail{background-color:#2a1a1a!important;border-color:#f87171!important;color:#f87171!important;}
+    .sm-aisle{width:18px;height:18px;display:inline-block;flex-shrink:0;}
+    .sm-row{display:flex;align-items:center;gap:2px;margin-bottom:2px;}
+    .sm-row-label{width:16px;font-size:.65rem;color:#888;flex-shrink:0;text-align:right;margin-right:4px;}
     .seat-popup{display:none;position:fixed;z-index:500;background:#1a1a1f;border:1px solid rgba(201,162,39,.3);border-radius:12px;padding:16px;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.6)}
     .seat-popup.show{display:block}
     .seat-popup-title{font-size:.8rem;font-weight:700;color:var(--gold);margin-bottom:12px;letter-spacing:.05em}
@@ -999,29 +1012,30 @@ function renderSmGrid() {
     const seats = SEATMAP_TEMPLATE.data[rowKey];
     if (!seats || !seats.length) return;
 
-    html += `<div style="display:flex;align-items:center;gap:2px;margin-bottom:2px;">
-      <span style="font-size:.65rem;color:#555;width:14px;text-align:right;margin-right:4px;flex-shrink:0;">${rowKey}</span>`;
+    html += `<div class="sm-row">
+      <span class="sm-row-label">${rowKey}</span>`;
 
     seats.forEach(cell => {
       if (cell.type === 'aisle') {
-        html += `<span style="width:8px;display:inline-block;flex-shrink:0;"></span>`;
+        html += `<span class="sm-aisle"></span>`;
         return;
       }
 
-      const code = cell.code;
-      const ov = smOverrides[code];
-      const zone = (ov && ov.zone) || cell.zone;
-      const state = (ov && ov.state) || cell.state || 'AVAILABLE';
+      const code    = cell.code;
+      const ov      = smOverrides[code];
+      const zone    = (ov && ov.zone) || cell.zone;
+      const state   = (ov && ov.state) || cell.state || 'AVAILABLE';
       const unavail = state === 'UNAVAILABLE';
-      const color = getZoneColor(zone);
+      const color   = getZoneColor(zone);
+      const cls     = 'sm-seat' + (unavail ? ' sm-unavail' : '');
 
       html += `<button
-        class="sm-seat"
+        class="${cls}"
         data-code="${code}"
         data-zone="${zone}"
         data-state="${state}"
         title="${code} | ${zone} | ${state}"
-        style="background:${unavail ? '#2a1a1a' : color};border-color:${unavail ? '#f87171' : color};color:${unavail ? '#f87171' : '#000'};"
+        style="--zone-color:${color};"
         onclick="openSeatPopup(event,'${code}')"
       >${unavail ? '✕' : cell.num}</button>`;
     });
@@ -1131,14 +1145,13 @@ function updateSeatBtn(code) {
   if (!btn) return;
   const ov = smOverrides[code] || {};
   const defaultCell = SEATMAP_TEMPLATE.data[code[0]]?.find(s => s.code === code);
-  const zone  = ov.zone  || (defaultCell && defaultCell.zone) || 'GOLD';
-  const state = ov.state || 'AVAILABLE';
+  const zone    = ov.zone  || (defaultCell && defaultCell.zone) || 'GOLD';
+  const state   = ov.state || 'AVAILABLE';
   const unavail = state === 'UNAVAILABLE';
-  const color = getZoneColor(zone);
-  btn.style.background   = unavail ? '#2a1a1a' : color;
-  btn.style.borderColor  = unavail ? '#f87171' : color;
-  btn.style.color        = unavail ? '#f87171' : '#000';
-  btn.textContent        = unavail ? '✕' : (defaultCell ? defaultCell.num : code.slice(1));
+  const color   = getZoneColor(zone);
+  btn.style.setProperty('--zone-color', color);
+  btn.classList.toggle('sm-unavail', unavail);
+  btn.textContent   = unavail ? '✕' : (defaultCell ? defaultCell.num : code.slice(1));
   btn.dataset.zone  = zone;
   btn.dataset.state = state;
   btn.title = `${code} | ${zone} | ${state}`;
