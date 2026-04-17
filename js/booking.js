@@ -1,6 +1,6 @@
 // ===== CONFIG =====
 // 🔁 Replaced Google Apps Script URL with Cloudflare Worker
-const WORKER_URL = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev/'; // ← update after: wrangler deploy
+const WORKER_URL = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev';
 
 const EVENTS_SOURCE  = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev/events';
 const SEATMAP_SOURCE = 'data/seatmap.json'; // fallback
@@ -486,23 +486,28 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        if (data.success && data.paymentUrl) {
-          // HitPay available — redirect to checkout
-          setBookingStatus('Redirecting to payment…', 'info', 'Almost there');
-          setTimeout(() => { window.location.href = data.paymentUrl; }, 800);
-          return;
-        }
-
         if (data.success && data.paynow) {
-          // HitPay unavailable — PayNow manual flow, confirmation email already sent
+          // PayNow flow — show QR + instructions, confirmation email already sent
+          const ref      = data.bookingRef || '';
+          const UEN      = '53384102W';
+          // Generate PayNow QR via api.qrserver.com
+          // PayNow QR string format per ABS spec
+          const paynowStr = `00020101021226370009SG.PAYNOW010120210${UEN.length}${UEN}52040000530370254${String(totalPrice.toFixed(2)).length}${totalPrice.toFixed(2)}5802SG5920LIGHT AND SHADOW MEDIA6009Singapore62${(4 + ref.length).toString().padStart(2,'0')}0508${ref.slice(0,20)}6304`;
+          const qrUrl    = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paynowStr)}`;
+
           setBookingStatus(
-            'Booking လက်ခံရှိပါသည်။ ကျေးဇူးပြု၍ email စစ်ဆေးပါ။<br><br>' +
-            '<b>(1)</b> PayNow to UEN &nbsp;<b>53384102W</b><br>' +
-            '&nbsp;&nbsp;&nbsp;&nbsp;LIGHT AND SHADOW MEDIA သို့ ကျသင့်ငွေ လွှဲပေးပါ။<br><br>' +
-            '<b>(2)</b> Reference တွင် Seat Number ထည့်ပါ။<br><br>' +
-            '<b>(3)</b> Payment screenshot ကို ShweTV Messenger ပို့ပါ။<br><br>' +
-            '<b>၂၄ နာရီအတွင်း E-ticket ပို့ပေးပါမည်။</b>',
-            'success'
+            `<div style="text-align:center;margin-bottom:16px;">` +
+            `<img src="${qrUrl}" alt="PayNow QR" style="width:180px;height:180px;border:4px solid #c9a227;border-radius:8px;display:block;margin:0 auto 8px;">` +
+            `<div style="font-size:0.75rem;color:#888;">Scan with your banking app</div>` +
+            `</div>` +
+            `<b>UEN: 53384102W</b> &nbsp;(LIGHT AND SHADOW MEDIA)<br>` +
+            `<b>Amount: SGD $${totalPrice.toFixed(2)}</b><br>` +
+            `<b>Reference: ${ref}</b><br><br>` +
+            `Booking လက်ခံရှိပါသည်။ Email စစ်ဆေးပါ။<br>` +
+            `Screenshot ကို <b>ShweTV Messenger</b> ပို့ပါ။<br>` +
+            `<span style="font-size:0.85rem;color:#888;">၂၄ နာရီအတွင်း E-ticket ပို့မည်။</span>`,
+            'success',
+            'Pay via PayNow'
           );
           selectedSeats.clear();
           selectedSeatsInput.value = '';
