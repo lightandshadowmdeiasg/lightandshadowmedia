@@ -1044,17 +1044,23 @@ function openSeatPopup(e, code) {
 
   const zones   = getZoneNames();
   const ov      = smOverrides[code] || {};
-  const defCell = SEATMAP_TEMPLATE.data[code[0]]?.find(s => s.code === code);
-  const curZone = (ov.zone  || (defCell && defCell.zone) || (zones[0] && zones[0].name) || '').toUpperCase();
-  const curState= ov.state  || (defCell && defCell.state) || 'AVAILABLE';
 
-  // Build popup HTML
+  // Safe SEATMAP_TEMPLATE lookup
+  const rowKey  = code[0];
+  const rowData = (typeof SEATMAP_TEMPLATE !== 'undefined' && SEATMAP_TEMPLATE.data)
+    ? SEATMAP_TEMPLATE.data[rowKey] : null;
+  const defCell = rowData ? rowData.find(s => s.code === code) : null;
+
+  const curZone  = (ov.zone  || (defCell && defCell.zone)  || (zones[0] && zones[0].name) || '').toUpperCase();
+  const curState = (ov.state || (defCell && defCell.state) || 'AVAILABLE').toUpperCase();
+
+  // Build zone buttons
   let zoneBtns = zones.map(z => {
     const active = z.name.toUpperCase() === curZone ? ' active' : '';
     return `<button class="zone-pick-btn${active}"
       style="background:${z.color};color:#000;"
       onclick="smSetZone('${z.name}')">${esc(z.name)}<br><span style="font-size:.65rem;font-weight:400;">$${z.price}</span></button>`;
-  }).join('');
+  }).join('') || '<span style="color:#888;font-size:.8rem;">Define zones above first.</span>';
 
   const popup = document.getElementById('seatPopup');
   popup.innerHTML = `
@@ -1067,14 +1073,21 @@ function openSeatPopup(e, code) {
     <button class="seat-popup-close" onclick="closeSeatPopup()">Done</button>
   `;
 
-  // Position popup near the seat button, but keep on screen
-  const btn  = e.currentTarget || e.target;
+  // Position popup — use fixed positioning (no scroll offset needed)
+  // e.target is reliable for inline onclick handlers (e.currentTarget is null there)
+  const btn  = e.target.closest('.sm-seat') || e.target;
   const rect = btn.getBoundingClientRect();
-  const pw   = 220, ph = 180;
-  let left = rect.left + window.scrollX;
-  let top  = rect.bottom + window.scrollY + 4;
+  const pw   = 220, ph = 200;
+
+  let left = rect.left;
+  let top  = rect.bottom + 6;
+
+  // Keep within viewport
   if (left + pw > window.innerWidth - 8)  left = window.innerWidth - pw - 8;
-  if (top  + ph > window.innerHeight + window.scrollY - 8) top = rect.top + window.scrollY - ph - 4;
+  if (left < 8) left = 8;
+  if (top + ph > window.innerHeight - 8)  top = rect.top - ph - 6;
+  if (top < 8)  top = 8;
+
   popup.style.left = left + 'px';
   popup.style.top  = top  + 'px';
   popup.classList.add('show');
@@ -1087,10 +1100,10 @@ function openSeatPopup(e, code) {
 function smSetZone(zoneName) {
   if (!_popupCode) return;
   const ov = smOverrides[_popupCode] || {};
-  const defCell = SEATMAP_TEMPLATE.data[_popupCode[0]]?.find(s => s.code === _popupCode);
+  const rowData = (typeof SEATMAP_TEMPLATE !== 'undefined' && SEATMAP_TEMPLATE.data) ? SEATMAP_TEMPLATE.data[_popupCode[0]] : null;
+  const defCell = rowData ? rowData.find(s => s.code === _popupCode) : null;
   smOverrides[_popupCode] = { zone: zoneName.toUpperCase(), state: ov.state || (defCell && defCell.state) || 'AVAILABLE' };
   updateSeatBtn(_popupCode);
-  // Update active button in popup
   document.querySelectorAll('.zone-pick-btn').forEach(b => {
     b.classList.toggle('active', b.textContent.trim().startsWith(zoneName));
   });
@@ -1099,7 +1112,8 @@ function smSetZone(zoneName) {
 function smSetState(state) {
   if (!_popupCode) return;
   const ov = smOverrides[_popupCode] || {};
-  const defCell = SEATMAP_TEMPLATE.data[_popupCode[0]]?.find(s => s.code === _popupCode);
+  const rowData = (typeof SEATMAP_TEMPLATE !== 'undefined' && SEATMAP_TEMPLATE.data) ? SEATMAP_TEMPLATE.data[_popupCode[0]] : null;
+  const defCell = rowData ? rowData.find(s => s.code === _popupCode) : null;
   smOverrides[_popupCode] = { zone: ov.zone || (defCell && defCell.zone) || '', state };
   updateSeatBtn(_popupCode);
   document.querySelectorAll('.state-btn').forEach(b => {
