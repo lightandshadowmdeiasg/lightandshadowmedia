@@ -158,23 +158,31 @@
     .sm-save-bar{display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)}
     .sm-preview{background:var(--dark2);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;margin-top:16px;font-size:.78rem;color:var(--muted);line-height:1.8}
     .sm-preview .zone-chip{display:inline-block;border-radius:4px;padding:2px 8px;font-size:.72rem;font-weight:700;margin:2px}
-    /* Seat map — matches booking.html exactly */
+    /* Seat map — exact booking.html classes */
     .sm-table{margin:0 auto;border-collapse:collapse;}
     .sm-table td{padding:1px;text-align:center;}
     .sm-row-label{font-weight:bold;color:#c9a227;padding-right:15px;font-size:1.1em;min-width:40px;}
-    .sm-seat-wrap{position:relative;display:inline-block;}
-    .sm-seat-wrap label{
+    .squaredCheckBoxStyle{position:relative;display:inline-block;}
+    .squaredCheckBoxStyle label{
       display:inline-block;width:18px;height:18px;border-radius:3px;
       cursor:pointer;position:relative;
-      transition:transform .2s ease,box-shadow .2s ease;
+      transition:transform 0.2s ease,box-shadow 0.2s ease;
       background-color:var(--zone-color,#D5D8DC);
       border:1.5px solid rgba(0,0,0,0.25);
-      font-size:.55rem;font-weight:700;color:#000;
-      display:inline-flex;align-items:center;justify-content:center;
     }
-    .sm-seat-wrap label:hover{transform:scale(1.15);box-shadow:0 0 8px rgba(201,162,39,0.6);}
-    .sm-seat-wrap.selected label{outline:2px solid #fff;outline-offset:1px;transform:scale(1.15);}
-    .sm-seat-wrap.sm-unavail label{background-color:#2a1a1a!important;border-color:#f87171!important;color:#f87171!important;}
+    .squaredCheckBoxStyle label:hover{transform:scale(1.15);box-shadow:0 0 8px rgba(201,162,39,0.6);}
+    .squaredCheckBoxStyle.selected label{outline:2px solid #fff;outline-offset:1px;transform:scale(1.15);}
+    .squaredCheckBoxStyle[data-zone] label{background-color:var(--zone-color,#4CAF50);border-color:rgba(0,0,0,0.25);}
+    .squaredCheckBoxStyle label .seat-num{
+      position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      font-size:9px;font-weight:600;color:rgba(0,0,0,0.75);pointer-events:none;line-height:1;
+    }
+    .squaredCheckBoxStyle.is-unavailable label{background-color:#333!important;border-color:#222!important;opacity:0.75;}
+    .squaredCheckBoxStyle.is-unavailable label:hover{transform:none!important;box-shadow:none!important;}
+    .squaredCheckBoxStyle.is-unavailable label::after{
+      content:"×";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+      color:rgba(255,255,255,0.9);font-size:18px;font-weight:900;line-height:1;pointer-events:none;
+    }
     #smGrid{background-color:#000;border-radius:15px;padding:20px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
     .seat-popup{display:none;position:fixed;z-index:500;background:#1a1a1f;border:1px solid rgba(201,162,39,.3);border-radius:12px;padding:16px;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.6)}
     .seat-popup.show{display:block}
@@ -1028,9 +1036,15 @@ function renderSmGrid() {
       const state   = (ov && ov.state) || cell.state || 'AVAILABLE';
       const unavail = state === 'UNAVAILABLE';
       const color   = getZoneColor(zone);
-      const wrapCls = 'sm-seat-wrap' + (unavail ? ' sm-unavail' : '');
+      const wrapCls = 'squaredCheckBoxStyle' + (unavail ? ' is-unavailable' : '') + (zone ? ' zone-assigned' : '');
 
-      html += `<td><div class="${wrapCls}" data-code="${code}" data-zone="${zone}" data-state="${state}" title="${code} | ${zone} | ${state}" onclick="openSeatPopup(event,'${code}')"><label style="--zone-color:${color};">${unavail ? '✕' : cell.num}</label></div></td>`;
+      html += `<td>
+        <div class="${wrapCls}" data-code="${code}" data-zone="${zone}" data-state="${state}"
+          style="--zone-color:${color};" title="${code} | ${zone} | ${state}"
+          onclick="openSeatPopup(event,'${code}')">
+          <label><span class="seat-num">${cell.num}</span></label>
+        </div>
+      </td>`;
     });
 
     html += `</tr>`;
@@ -1083,7 +1097,7 @@ function openSeatPopup(e, code) {
 
   // Position popup — use fixed positioning (no scroll offset needed)
   // e.target is reliable for inline onclick handlers (e.currentTarget is null there)
-  const btn  = e.target.closest('.sm-seat-wrap') || e.target;
+  const btn  = e.target.closest('.squaredCheckBoxStyle') || e.target;
   const rect = btn.getBoundingClientRect();
   const pw   = 220, ph = 200;
 
@@ -1101,7 +1115,7 @@ function openSeatPopup(e, code) {
   popup.classList.add('show');
 
   // Highlight selected seat
-  document.querySelectorAll('.sm-seat-wrap.selected').forEach(s => s.classList.remove('selected'));
+  document.querySelectorAll('.squaredCheckBoxStyle.selected').forEach(s => s.classList.remove('selected'));
   btn.classList.add('selected');
 }
 
@@ -1131,25 +1145,23 @@ function smSetState(state) {
 
 function closeSeatPopup() {
   document.getElementById('seatPopup').classList.remove('show');
-  document.querySelectorAll('.sm-seat-wrap.selected').forEach(s => s.classList.remove('selected'));
+  document.querySelectorAll('.squaredCheckBoxStyle.selected').forEach(s => s.classList.remove('selected'));
   _popupCode = null;
 }
 
 function updateSeatBtn(code) {
-  const wrap = document.querySelector(`.sm-seat-wrap[data-code="${code}"]`);
+  const wrap = document.querySelector(`.squaredCheckBoxStyle[data-code="${code}"]`);
   if (!wrap) return;
-  const lbl = wrap.querySelector('label');
+  const numSpan = wrap.querySelector('.seat-num');
   const ov  = smOverrides[code] || {};
   const defaultCell = SEATMAP_TEMPLATE.data[code[0]]?.find(s => s.code === code);
   const zone    = ov.zone  || (defaultCell && defaultCell.zone) || 'GOLD';
   const state   = ov.state || 'AVAILABLE';
   const unavail = state === 'UNAVAILABLE';
   const color   = getZoneColor(zone);
-  if (lbl) {
-    lbl.style.setProperty('--zone-color', color);
-    lbl.textContent = unavail ? '✕' : (defaultCell ? defaultCell.num : code.slice(1));
-  }
-  wrap.classList.toggle('sm-unavail', unavail);
+  wrap.style.setProperty('--zone-color', color);
+  wrap.classList.toggle('is-unavailable', unavail);
+  if (numSpan) numSpan.textContent = defaultCell ? defaultCell.num : code.slice(1);
   wrap.dataset.zone  = zone;
   wrap.dataset.state = state;
   wrap.title = `${code} | ${zone} | ${state}`;
@@ -1223,7 +1235,7 @@ function esc(s){
 <script>
   document.addEventListener('click', e => {
     const popup = document.getElementById('seatPopup');
-    if (popup && popup.classList.contains('show') && !popup.contains(e.target) && !e.target.closest('.sm-seat-wrap')) {
+    if (popup && popup.classList.contains('show') && !popup.contains(e.target) && !e.target.closest('.squaredCheckBoxStyle')) {
       closeSeatPopup();
     }
   });
