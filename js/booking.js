@@ -488,12 +488,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (data.success && data.paynow) {
           // PayNow flow — show QR + instructions, confirmation email already sent
-          const ref      = data.bookingRef || '';
-          const UEN      = '53384102W';
-          // Generate PayNow QR via api.qrserver.com
-          // PayNow QR string format per ABS spec
-          const paynowStr = `00020101021226370009SG.PAYNOW010120210${UEN.length}${UEN}52040000530370254${String(totalPrice.toFixed(2)).length}${totalPrice.toFixed(2)}5802SG5920LIGHT AND SHADOW MEDIA6009Singapore62${(4 + ref.length).toString().padStart(2,'0')}0508${ref.slice(0,20)}6304`;
-          const qrUrl    = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paynowStr)}`;
+          const ref = data.bookingRef || '';
+          const qrUrl = buildPayNowQRUrl('53384102W', totalPrice, ref);
 
           setBookingStatus(
             `<div style="text-align:center;margin-bottom:16px;">` +
@@ -528,6 +524,51 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.textContent = 'Confirm Booking';
       });
   });
+
+  // ── PayNow QR generator (ABS/EMVCo spec with CRC-16) ──────
+  function crc16(str) {
+    let crc = 0xFFFF;
+    for (let i = 0; i < str.length; i++) {
+      crc ^= str.charCodeAt(i) << 8;
+      for (let j = 0; j < 8; j++) {
+        crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) : (crc << 1);
+        crc &= 0xFFFF;
+      }
+    }
+    return crc.toString(16).toUpperCase().padStart(4, '0');
+  }
+
+  function tlv(id, value) {
+    const v = String(value);
+    return id + v.length.toString().padStart(2, '0') + v;
+  }
+
+  function buildPayNowQRUrl(uen, amount, reference) {
+    const merchantAccount =
+      tlv('00', 'SG.PAYNOW') +
+      tlv('01', '0') +           // proxy type: 0 = UEN
+      tlv('02', uen) +
+      tlv('03', '0');            // 0 = amount fixed
+
+    const ref             = (reference || '').slice(0, 25);
+    const additionalField = tlv('62', tlv('05', ref));
+
+    const body =
+      tlv('00', '01') +
+      tlv('01', '12') +
+      tlv('26', merchantAccount) +
+      tlv('52', '0000') +
+      tlv('53', '702') +
+      tlv('54', amount.toFixed(2)) +
+      tlv('58', 'SG') +
+      tlv('59', 'LIGHT AND SHADOW MEDIA') +
+      tlv('60', 'Singapore') +
+      additionalField +
+      '6304';
+
+    const qrString = body + crc16(body);
+    return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrString)}`;
+  }
 
   function applyZoneColors() {
     const zones = seatmap.zones || {};
