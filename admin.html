@@ -1022,8 +1022,7 @@ function renderSmGrid() {
         data-state="${state}"
         title="${code} | ${zone} | ${state}"
         style="background:${unavail ? '#2a1a1a' : color};border-color:${unavail ? '#f87171' : color};color:${unavail ? '#f87171' : '#000'};"
-        onclick="smCycleZone('${code}')"
-        oncontextmenu="smToggleUnavail(event,'${code}')"
+        onclick="openSeatPopup(event,'${code}')"
       >${unavail ? '✕' : cell.num}</button>`;
     });
 
