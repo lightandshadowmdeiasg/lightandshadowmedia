@@ -159,9 +159,9 @@
     .sm-preview{background:var(--dark2);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;margin-top:16px;font-size:.78rem;color:var(--muted);line-height:1.8}
     .sm-preview .zone-chip{display:inline-block;border-radius:4px;padding:2px 8px;font-size:.72rem;font-weight:700;margin:2px}
     /* Seat map — exact booking.html classes */
-    .sm-table{margin:0 auto;border-collapse:collapse;}
-    .sm-table td{padding:1px;text-align:center;}
-    .sm-row-label{font-weight:bold;color:#c9a227;padding-right:15px;font-size:1.1em;min-width:40px;}
+    .seat-table{margin:0 auto;border-collapse:collapse;}
+    .seat-table td{padding:1px;text-align:center;}
+    .row-label{font-weight:bold;color:#c9a227;padding-right:15px;font-size:1.1em;min-width:40px;}
     .squaredCheckBoxStyle{position:relative;display:inline-block;}
     .squaredCheckBoxStyle label{
       display:inline-block;width:18px;height:18px;border-radius:3px;
@@ -965,8 +965,8 @@ function renderSeatmapEditor(eventId, zones, rowRanges, overrides) {
         Tap any seat to change its zone or mark it unavailable.
         <span style="color:#f87171;"> &#x2715; = Unavailable</span>
       </div>
-      <div style="overflow-x:auto;">
-        <div id="smGrid" style="display:inline-block;min-width:100%;"></div>
+      <div class="seat-map-container" style="overflow-x:auto;padding:20px;background-color:#000;border-radius:15px;-webkit-overflow-scrolling:touch;">
+        <div id="smGrid"></div>
       </div>
     </div>
 
@@ -1015,14 +1015,14 @@ function renderSmGrid() {
     </span>`
   ).join('');
 
-  let html = '<table class="sm-table">';
+  let html = '<table class="seat-table">';
   const rows = SEATMAP_TEMPLATE.rows;
 
   rows.forEach(rowKey => {
     const seats = SEATMAP_TEMPLATE.data[rowKey];
     if (!seats || !seats.length) return;
 
-    html += `<tr><td class="sm-row-label">${rowKey}</td>`;
+    html += `<tr><td class="row-label">${rowKey}</td>`;
 
     seats.forEach(cell => {
       if (cell.type === 'aisle') {
