@@ -482,7 +482,7 @@
 
     try {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 60 } }
       });
     } catch {
       try {
@@ -512,19 +512,35 @@
 
   function stopCamera() {
     scanActive = false;
-    if (rafId)  { clearTimeout(rafId); rafId = null; }
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      clearTimeout(rafId);
+      rafId = null;
+    }
     if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
     videoEl.srcObject = null;
   }
 
-  // Use setTimeout instead of rAF so it keeps running even when tab is backgrounded on some devices
-  // rAF throttles/pauses on hidden tabs; setTimeout at 100ms (~10fps) is sufficient for QR scanning
+  // Use rAF for fast detection when visible (~60fps), fall back to setTimeout for background
   function scheduleScanLoop() {
     if (!scanActive) return;
-    rafId = setTimeout(async () => {
-      await scanTick();
-      scheduleScanLoop();
-    }, 100);
+    if (useDetector && detector) {
+      // BarcodeDetector: use rAF for near-instant detection
+      rafId = requestAnimationFrame(rafScanLoop);
+    } else {
+      // jsQR fallback: setTimeout at 50ms (20fps) — jsQR is CPU-heavy so don't overdo it
+      rafId = setTimeout(async () => {
+        await scanTick();
+        scheduleScanLoop();
+      }, 50);
+    }
+  }
+
+  // rAF loop for BarcodeDetector — fires every frame (~16ms at 60fps)
+  async function rafScanLoop() {
+    if (!scanActive) return;
+    await scanTick();
+    if (scanActive) rafId = requestAnimationFrame(rafScanLoop);
   }
 
   async function scanTick() {
@@ -768,7 +784,7 @@
       lastScanned = '';
       busy        = false;
       inFlight    = false;
-    }, 1500);
+    }, 800);
   }
 
   rBtn.addEventListener('click', dismiss);
