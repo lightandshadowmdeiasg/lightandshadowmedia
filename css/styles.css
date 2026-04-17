@@ -1731,3 +1731,50 @@ a {
     filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
   }
   
+/* ── Footer legal links ──────────────────────────────────────── */
+.footer-legal {
+    margin-top: 8px;
+    font-size: 0.78rem;
+}
+.footer-legal a {
+    color: #666;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.footer-legal a:hover {
+    color: #c9a227;
+}
+.footer-sep {
+    margin: 0 8px;
+    color: #444;
+}
+
+/* ── Booking consent checkbox ────────────────────────────────── */
+.consent-group {
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
+.consent-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #a0a0a8;
+    line-height: 1.5;
+}
+.consent-label input[type="checkbox"] {
+    margin-top: 3px;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    accent-color: #c9a227;
+    cursor: pointer;
+}
+.consent-label a {
+    color: #c9a227;
+    text-decoration: none;
+}
+.consent-label a:hover {
+    text-decoration: underline;
+}
