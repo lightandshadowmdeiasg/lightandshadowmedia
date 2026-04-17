@@ -55,7 +55,16 @@ const Navigation = {
         
         // Close mobile menu on escape key
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
+            if (e.key === 'Escape') this.closeMobileMenu();
+        });
+
+        // Close mobile menu on tap outside nav
+        document.addEventListener('click', (e) => {
+            if (
+                this.navMobile?.classList.contains('active') &&
+                !this.navMobile.contains(e.target) &&
+                !this.menuToggle.contains(e.target)
+            ) {
                 this.closeMobileMenu();
             }
         });
@@ -70,13 +79,17 @@ const Navigation = {
     },
     
     toggleMobileMenu() {
-        this.menuToggle.classList.toggle('active');
-        this.navMobile?.classList.toggle('active');
-        document.body.style.overflow = this.navMobile?.classList.contains('active') ? 'hidden' : '';
+        const isOpen = this.navMobile?.classList.toggle('active');
+        this.menuToggle.classList.toggle('active', isOpen);
+        this.menuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        this.menuToggle.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+        document.body.style.overflow = isOpen ? 'hidden' : '';
     },
     
     closeMobileMenu() {
         this.menuToggle?.classList.remove('active');
+        this.menuToggle?.setAttribute('aria-expanded', 'false');
+        this.menuToggle?.setAttribute('aria-label', 'Open menu');
         this.navMobile?.classList.remove('active');
         document.body.style.overflow = '';
     },

@@ -287,6 +287,10 @@ a {
     background: transparent;
     border: 0;
     padding: 8px;                 /* easier to tap */
+    touch-action: manipulation;   /* iOS tap fix */
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
   }
   
   .menu-toggle span{
@@ -308,13 +312,16 @@ a {
     gap: 30px;
     opacity: 0;
     visibility: hidden;
-    transition: var(--transition-smooth);
+    pointer-events: none;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
     z-index: 1100;
+    -webkit-overflow-scrolling: touch;
   }
   
   .nav-mobile.active{
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
   }
   
   .nav-mobile a{
