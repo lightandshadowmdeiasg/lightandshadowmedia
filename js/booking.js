@@ -538,6 +538,34 @@ document.addEventListener('DOMContentLoaded', () => {
       const z = zones[el.dataset.zone];
       if (z?.color) el.style.setProperty('--zone-color', z.color);
     });
+    buildLegend(zones);
+  }
+
+  function buildLegend(zones) {
+    const legend = document.querySelector('.legend');
+    if (!legend) return;
+    const zoneEntries = Object.entries(zones);
+    if (!zoneEntries.length) return; // keep hardcoded if no zones loaded
+
+    // Build zone items dynamically
+    let html = zoneEntries.map(([key, z]) => {
+      const price = z.price != null ? ` - ${z.price} SGD` : '';
+      const label = key.charAt(0) + key.slice(1).toLowerCase();
+      return `<span class="legend-item">
+        <span class="legend-box" style="background-color:${z.color};border-color:${z.color};"></span>
+        ${label}${price}
+      </span>`;
+    }).join('');
+
+    // Always append static Booked + Unavailable
+    html += `<span class="legend-item">
+      <span class="legend-box legend-booked"></span> Booked
+    </span>
+    <span class="legend-item">
+      <span class="legend-box legend-unavailable"></span> Unavailable
+    </span>`;
+
+    legend.innerHTML = html;
   }
 
 });
