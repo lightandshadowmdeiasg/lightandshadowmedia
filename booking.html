@@ -756,20 +756,19 @@ html.no-scroll {
     <!-- Left -->
     <ul class="nav-links nav-left">
       <li><a href="index.html">Home</a></li>
-      
+      <li><a href="live-events.html" class="active">Live Events</a></li>
     </ul>
 
     <!-- Center Logo -->
     <a href="index.html" class="logo">
-      <span class="logo-text">Light <span class="ampersand">and</span> Shadow</span>
+      <span class="logo-text">Light <span class="ampersand">&</span> Shadow</span>
       <span class="logo-tagline">Media</span>
     </a>
 
     <!-- Right -->
     <ul class="nav-links nav-right">
-      <li><a href="live-events.html" class="active">Live Events</a></li>
-      <!-- <li><a href="corporate.html">Corporate</a></li>
-      <li><a href="film.html">Film</a></li> -->
+      <li><a href="corporate.html">Corporate</a></li>
+      <li><a href="film.html">Film</a></li>
     </ul>
 
     <!-- Hamburger -->
@@ -784,8 +783,8 @@ html.no-scroll {
   <div class="nav-mobile">
     <a href="index.html">Home</a>
     <a href="live-events.html" class="active">Live Events</a>
-    <!-- <a href="corporate.html">Corporate</a>
-    <a href="film.html">Film</a> -->
+    <a href="corporate.html">Corporate</a>
+    <a href="film.html">Film</a>
     <a href="#contact">Contact</a>
   </div>
 </nav>
@@ -802,6 +801,11 @@ html.no-scroll {
   </header>
 
   <section class="section-padding">
+    <!-- Announcement banner — shown only if event has an announcement -->
+    <div id="announcementBanner" style="display:none;max-width:700px;margin:20px auto 0;padding:12px 20px;background:rgba(201,162,39,0.12);border:1px solid rgba(201,162,39,0.4);border-radius:10px;text-align:center;font-size:0.9rem;color:#f0d070;letter-spacing:0.02em;">
+      <span style="margin-right:8px;">📢</span><span id="announcementText"></span>
+    </div>
+
     <!-- Legend at bottom -->
     <div class="legend">
       <span class="legend-item">

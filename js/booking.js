@@ -133,6 +133,16 @@ document.addEventListener('DOMContentLoaded', () => {
       eventVenueInput.value  = currentEvent.venue;
       eventTitleHidden.value = currentEvent.title;
 
+      // Show announcement banner if event has one
+      const banner = document.getElementById('announcementBanner');
+      const bannerText = document.getElementById('announcementText');
+      if (banner && bannerText && currentEvent.announcement) {
+        bannerText.textContent = currentEvent.announcement;
+        banner.style.display = 'block';
+      } else if (banner) {
+        banner.style.display = 'none';
+      }
+
       loadSeatMap();
     })
     .catch(err => {

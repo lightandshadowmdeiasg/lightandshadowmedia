@@ -289,6 +289,7 @@
         <div class="form-group"><label>Video URL</label><input id="f_video" placeholder="https://youtu.be/..." autocomplete="off"></div>
       </div>
       <div class="form-group" style="margin-bottom:16px;"><label>Description</label><textarea id="f_desc" placeholder="Brief description of the event..."></textarea></div>
+      <div class="form-group" style="margin-bottom:16px;"><label>Announcement</label><input id="f_announcement" placeholder="e.g. Early bird: 20% off until 30 Apr" autocomplete="off"></div>
       <div class="form-actions">
         <button class="btn-save" onclick="addEvent()">Save Event</button>
         <button class="btn-cancel-form" onclick="toggleAddForm()">Cancel</button>
@@ -315,6 +316,7 @@
         <div class="form-group"><label>Video URL</label><input id="ef_video" autocomplete="off"></div>
       </div>
       <div class="form-group" style="margin-bottom:16px;"><label>Description</label><textarea id="ef_desc"></textarea></div>
+      <div class="form-group" style="margin-bottom:16px;"><label>Announcement</label><input id="ef_announcement" placeholder="e.g. Early bird: 20% off until 30 Apr" autocomplete="off"></div>
       <div class="form-actions">
         <button class="btn-save" onclick="saveEdit()">Save Changes</button>
         <button class="btn-cancel-form" onclick="cancelEdit()">Cancel</button>
@@ -654,7 +656,8 @@ function openEdit(id){
   document.getElementById('ef_category').value=(ev['Category']      ||'special').toLowerCase();
   document.getElementById('ef_thumb').value  = ev['Thumbnail']      ||'';
   document.getElementById('ef_video').value  = ev['Video URL']      ||'';
-  document.getElementById('ef_desc').value   = ev['Description']    ||'';
+  document.getElementById('ef_desc').value         = ev['Description']    ||'';
+  document.getElementById('ef_announcement').value = ev['Announcement']  ||'';
   document.getElementById('editEventForm').classList.add('open');
   document.getElementById('addEventForm').classList.remove('open');
   document.getElementById('editEventForm').scrollIntoView({behavior:'smooth',block:'start'});
@@ -676,7 +679,8 @@ async function addEvent(){
     category:      document.getElementById('f_category').value,
     thumbnail:     document.getElementById('f_thumb').value.trim(),
     videoUrl:      document.getElementById('f_video').value.trim(),
-    description:   document.getElementById('f_desc').value.trim()
+    description:   document.getElementById('f_desc').value.trim(),
+    announcement:  document.getElementById('f_announcement').value.trim()
   };
 
   try{
@@ -700,7 +704,8 @@ async function saveEdit(){
     category:    document.getElementById('ef_category').value,
     thumbnail:   document.getElementById('ef_thumb').value.trim(),
     videoUrl:    document.getElementById('ef_video').value.trim(),
-    description: document.getElementById('ef_desc').value.trim()
+    description:  document.getElementById('ef_desc').value.trim(),
+    announcement: document.getElementById('ef_announcement').value.trim()
   };
   try{
     const res  = await fetch(WORKER+'/admin-events',{method:'PATCH',headers:{'Content-Type':'application/json','X-Admin-Token':token},body:JSON.stringify(payload)});
