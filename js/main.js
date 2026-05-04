@@ -448,7 +448,7 @@ const ProjectLoader = {
             .join('');
 
         // Bind click events to cards + booking buttons
-        this.grid.querySelectorAll('.project-card').forEach((card, index) => {
+        this.grid.querySelectorAll('.project-card, .event-list-card').forEach((card, index) => {
             const item = filteredData[index];
 
             // Whole card → open video modal (same as before)
@@ -472,7 +472,7 @@ const ProjectLoader = {
 
         // Stagger animation
         setTimeout(() => {
-            this.grid.querySelectorAll('.project-card').forEach((card, index) => {
+            this.grid.querySelectorAll('.project-card, .event-list-card').forEach((card, index) => {
                 setTimeout(() => {
                     card.classList.add('visible');
                 }, index * 100);

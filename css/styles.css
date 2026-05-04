@@ -1785,6 +1785,7 @@ a {
 .consent-label a:hover {
     text-decoration: underline;
 }
+
 /* ── Live Events: Horizontal List Cards ─────────────────────────── */
 .projects-grid[data-source*="events"] {
     display: flex;
