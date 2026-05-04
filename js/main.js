@@ -55,16 +55,7 @@ const Navigation = {
         
         // Close mobile menu on escape key
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') this.closeMobileMenu();
-        });
-
-        // Close mobile menu on tap outside nav
-        document.addEventListener('click', (e) => {
-            if (
-                this.navMobile?.classList.contains('active') &&
-                !this.navMobile.contains(e.target) &&
-                !this.menuToggle.contains(e.target)
-            ) {
+            if (e.key === 'Escape') {
                 this.closeMobileMenu();
             }
         });
@@ -79,17 +70,13 @@ const Navigation = {
     },
     
     toggleMobileMenu() {
-        const isOpen = this.navMobile?.classList.toggle('active');
-        this.menuToggle.classList.toggle('active', isOpen);
-        this.menuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        this.menuToggle.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
-        document.body.style.overflow = isOpen ? 'hidden' : '';
+        this.menuToggle.classList.toggle('active');
+        this.navMobile?.classList.toggle('active');
+        document.body.style.overflow = this.navMobile?.classList.contains('active') ? 'hidden' : '';
     },
     
     closeMobileMenu() {
         this.menuToggle?.classList.remove('active');
-        this.menuToggle?.setAttribute('aria-expanded', 'false');
-        this.menuToggle?.setAttribute('aria-label', 'Open menu');
         this.navMobile?.classList.remove('active');
         document.body.style.overflow = '';
     },
@@ -344,6 +331,38 @@ const FallbackData = {
 };
 
 /* ============================================
+   THUMBNAIL URL RESOLVER
+   ============================================================ */
+
+// Converts Google Drive share links to direct-embeddable thumbnail URLs
+function resolveThumbUrl(url) {
+    if (!url) return '';
+    url = url.trim();
+
+    // Already a direct thumbnail URL — return as-is
+    if (url.includes('drive.google.com/thumbnail')) return url;
+
+    // https://drive.google.com/file/d/FILE_ID/view
+    const m1 = url.match(/drive\.google\.com\/file\/d\/([^\/\?]+)/);
+    if (m1) return `https://lh3.googleusercontent.com/d/${m1[1]}=w800`;
+
+    // https://drive.google.com/open?id=FILE_ID
+    const m2 = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+    if (m2) return `https://lh3.googleusercontent.com/d/${m2[1]}=w800`;
+
+    // https://drive.google.com/uc?export=view&id=FILE_ID  or  uc?id=FILE_ID
+    const m3 = url.match(/drive\.google\.com\/uc\?.*id=([^&]+)/);
+    if (m3) return `https://lh3.googleusercontent.com/d/${m3[1]}=w800`;
+
+    // https://drive.google.com/thumbnail?id=FILE_ID  (already formatted)
+    const m4 = url.match(/drive\.google\.com\/thumbnail\?.*id=([^&]+)/);
+    if (m4) return `https://lh3.googleusercontent.com/d/${m4[1]}=w800`;
+
+    // Return as-is for normal URLs and relative paths
+    return url;
+}
+
+/*  ============================================================
    PROJECT LOADER MODULE
    ============================================ */
 const ProjectLoader = {
@@ -377,35 +396,20 @@ const ProjectLoader = {
     
     async loadData() {
         this.showLoading();
-
-        // Live Events page — pull from Worker instead of JSON
-        const isLiveEvents = this.source && this.source.indexOf('live-events') !== -1;
-
-        if (isLiveEvents) {
-            try {
-                const WORKER_EVENTS = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev/events';
-                const response = await fetch(WORKER_EVENTS);
-                if (!response.ok) throw new Error('Failed to load events from Worker');
-                const json = await response.json();
-                this.data = json.events || [];
-                this.render();
-                return;
-            } catch (error) {
-                console.error('Error loading events from Worker:', error);
-                this.showError();
-                return;
-            }
-        }
-
-        // Other pages (corporate, film) — use JSON files as before
+        
         try {
             const response = await fetch(this.source);
             if (!response.ok) throw new Error('Failed to load data');
+            
             const json = await response.json();
+            
+            // Handle different JSON structures
             this.data = json.events || json.projects || json.films || [];
             this.render();
         } catch (error) {
             console.error('Error loading projects from JSON, using fallback data:', error);
+            
+            // Use fallback data for local file:// viewing
             const fallback = FallbackData[this.source];
             if (fallback) {
                 this.data = fallback.events || fallback.projects || fallback.films || [];
@@ -483,7 +487,7 @@ const ProjectLoader = {
     
         // Show booking button only on the Live Events page
         const isLiveEvents = this.source && this.source.indexOf('live-events') !== -1;
-        const isBookable   = isLiveEvents && (item.bookingStatus === 'open' || (!item.bookingStatus && item.status === 'upcoming'));
+        const isBookable   = isLiveEvents && item.status === 'upcoming';
 
         const bookingButton = isBookable ? `
                 <div class="project-actions" style="margin-top: 1rem;">
@@ -497,7 +501,14 @@ const ProjectLoader = {
         return `
             <article class="project-card stagger-item" data-index="${index}">
                 ${item.thumbnail ?
-                    `<img src="${item.thumbnail}" alt="${item.title}" class="project-card-image" loading="lazy">` :
+                    `<img src="${resolveThumbUrl(item.thumbnail)}" alt="${item.title}" class="project-card-image" loading="lazy" onerror="this.style.display='none';this.nextElementSibling&&(this.nextElementSibling.style.display='flex')">
+                    <div class="project-card-placeholder" style="display:none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <rect x="2" y="2" width="20" height="20" rx="2"/>
+                            <circle cx="8" cy="8" r="2"/>
+                            <path d="M2 15l5-5 4 4 5-5 6 6"/>
+                        </svg>
+                    </div>` :
                     `<div class="project-card-placeholder">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                             <rect x="2" y="2" width="20" height="20" rx="2"/>
