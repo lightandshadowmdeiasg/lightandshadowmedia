@@ -405,6 +405,15 @@ const ProjectLoader = {
             
             // Handle different JSON structures
             this.data = json.events || json.projects || json.films || [];
+
+            // Sort live events by date — latest first
+            if (this.source && (this.source.indexOf('live-events') !== -1 || this.source.indexOf('workers.dev/events') !== -1)) {
+                this.data.sort((a, b) => {
+                    const da = a.date ? new Date(a.date).getTime() : 0;
+                    const db = b.date ? new Date(b.date).getTime() : 0;
+                    return db - da; // descending — latest first
+                });
+            }
             this.render();
         } catch (error) {
             console.error('Error loading projects from JSON, using fallback data:', error);
