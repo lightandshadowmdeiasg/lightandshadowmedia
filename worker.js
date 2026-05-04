@@ -1,25 +1,36 @@
 /* ============================================================
-   LIGHT & SHADOW MEDIA — Cloudflare Worker v3
-   
+   LIGHT & SHADOW MEDIA — Cloudflare Worker v4
+   Payment: UOB PayNow Corporate (direct bank, no third-party gateway)
+
    Endpoints:
      GET  /?eventId=xxx        — return booked seats
-     POST /                    — reserve seats + create HitPay payment link
-     POST /webhook             — HitPay payment confirmation → Sheets + ticket email
-     PATCH /payment-status     — manual status update
+     POST /                    — reserve seats + send PayNow confirmation email
+     POST /webhook             — UOB payment notification → Sheets + ticket email
+     PATCH /payment-status     — manual status update (admin)
+     POST /admin-confirm       — admin confirm payment + send ticket
+     POST /admin-resend        — admin resend ticket email
+     GET  /admin-bookings      — all bookings (admin)
+     GET  /admin-events        — events list (admin)
+     POST /admin-events        — add event (admin)
+     PATCH /admin-events       — update event (admin)
+     GET  /events              — public events list
+     GET  /seatmap             — seatmap for event
+     POST /admin-seatmap       — save seatmap config (admin)
+     GET  /admin-seatmap       — get seatmap config (admin)
+     GET  /scan                — door scanner QR verification
 
    Flow:
-     1. User selects seats → POST / → seats reserved (Pending Payment)
-        → Worker creates HitPay payment request
-        → Returns { paymentUrl } to frontend
-        → Frontend redirects user to HitPay
-     2. User pays on HitPay
-     3. HitPay POSTs to /webhook
-        → Worker verifies HMAC signature
-        → Updates sheet row to Paid
-        → Sends ticket email with QR codes per seat
-     4. HitPay redirects user to success/failure page
+     1. Customer selects seats → POST /
+        → Seats reserved (Pending Payment) in Sheets
+        → PayNow confirmation email sent (UEN + booking ref)
+     2. Customer pays via PayNow to UOB account
+     3. UOB sends webhook to POST /webhook (when UOB API is live)
+        → Worker verifies UOB signature
+        → Updates booking to Paid → sends QR ticket email
+        (Manual fallback: admin confirms via /admin-confirm)
 
-   Auth: OAuth2 refresh token (Google APIs)
+   Auth: Google OAuth2 refresh token
+   UOB API: Pending integration — webhook stub ready
    ============================================================ */
 
    const CORS_ORIGIN     = 'https://lightandshadow.media';
@@ -30,13 +41,9 @@
    const EVENTS_TAB   = 'Events';
    const SITE_URL     = 'https://lightandshadow.media';
    
-   // HitPay API — swap to sandbox URL for testing:
-   // https://api.sandbox.hit-pay.com/v1/payment-requests
-   const HITPAY_API   = 'https://api.hit-pay.com/v1/payment-requests';
-   
    const BOOKING_HEADERS = [
      'Timestamp', 'Name', 'Email', 'Phone', 'Seats',
-     'Zone', 'Total Payable', 'Payment Status', 'HitPay Ref'
+     'Zone', 'Total Payable', 'Payment Status', 'Booking Ref'
    ];
    
    const EVENTS_HEADERS = [
@@ -68,7 +75,7 @@
          });
        }
    
-       // Webhook does NOT need CORS — HitPay calls it server-to-server
+       // Webhook does NOT need CORS — UOB calls it server-to-server
        if (request.method === 'POST' && pathname === '/webhook') {
          return await handleWebhook(request, env);
        }
@@ -97,6 +104,9 @@
          if (request.method === 'POST'  && pathname === '/admin-events')         return await handleAdminAddEvent(request, env, origin);
          if (request.method === 'PATCH' && pathname === '/admin-events')         return await handleAdminUpdateEvent(request, env, origin);
          if (request.method === 'GET'   && pathname === '/events')               return await handlePublicEvents(request, env, origin);
+         if (request.method === 'GET'   && pathname === '/seatmap')              return await handlePublicSeatmap(request, env, origin);
+         if (request.method === 'POST'  && pathname === '/admin-seatmap')        return await handleAdminSaveSeatmap(request, env, origin);
+         if (request.method === 'GET'   && pathname === '/admin-seatmap')        return await handleAdminGetSeatmap(request, env, origin);
          return corsResponse(JSON.stringify({ error: 'Not found' }), 404, origin);
        } catch (err) {
          console.error('Worker error:', err);
@@ -146,13 +156,27 @@
      const values = await sheetsRead(env, token, eventId, 'A:I');
      if (!values || values.length <= 1) return corsResponse(JSON.stringify({ bookedSeats: [] }), 200, origin);
    
-     const header   = values[0];
-     const seatsCol = header.indexOf('Seats');
+     const header    = values[0];
+     const seatsCol  = header.indexOf('Seats');
+     const tsCol     = header.indexOf('Timestamp');
+     const statusCol2= header.indexOf('Payment Status');
      if (seatsCol === -1) return corsResponse(JSON.stringify({ bookedSeats: [] }), 200, origin);
    
      const bookedSet = new Set();
+     const now       = Date.now();
+     const EXPIRE_MS = 30 * 60 * 1000; // 30 minutes
+   
      for (let i = 1; i < values.length; i++) {
-       const rowSeats = String(values[i][seatsCol] || '').trim();
+       const rowSeats  = String(values[i][seatsCol] || '').trim();
+       const rowStatus = statusCol2 !== -1 ? String(values[i][statusCol2] || '').trim() : '';
+       const rowTs     = tsCol !== -1 ? String(values[i][tsCol] || '').trim() : '';
+   
+       // Skip expired pending — treat as available
+       if (rowStatus === 'Pending Payment' && rowTs) {
+         const created = new Date(rowTs).getTime();
+         if (!isNaN(created) && (now - created) > EXPIRE_MS) continue;
+       }
+   
        if (rowSeats) rowSeats.split(',').map(s => s.trim()).filter(Boolean).forEach(s => bookedSet.add(s));
      }
    
@@ -161,8 +185,8 @@
    
    
    // ============================================================
-   // POST / — reserve seats + create HitPay payment request
-   // Returns { success, paymentUrl } to frontend
+   // POST / — reserve seats + send PayNow confirmation email
+   // Returns { success: true, paynow: true, bookingRef } to frontend
    // ============================================================
    async function handlePost(request, env, origin) {
      let data = {};
@@ -237,11 +261,22 @@
      const bookedSet = new Set();
    
      if (values && values.length > 1) {
-       const header   = values[0];
-       const seatsCol = header.indexOf('Seats');
-       if (seatsCol !== -1) {
+       const header    = values[0];
+       const seatsCol2 = header.indexOf('Seats');
+       const tsCol2    = header.indexOf('Timestamp');
+       const stCol2    = header.indexOf('Payment Status');
+       const nowMs     = Date.now();
+       const EXPIRE    = 30 * 60 * 1000;
+       if (seatsCol2 !== -1) {
          for (let i = 1; i < values.length; i++) {
-           const rowSeats = String(values[i][seatsCol] || '').trim();
+           const rowSeats  = String(values[i][seatsCol2] || '').trim();
+           const rowStatus = stCol2  !== -1 ? String(values[i][stCol2]  || '').trim() : '';
+           const rowTs     = tsCol2  !== -1 ? String(values[i][tsCol2]  || '').trim() : '';
+           // Skip expired pending bookings
+           if (rowStatus === 'Pending Payment' && rowTs) {
+             const created = new Date(rowTs).getTime();
+             if (!isNaN(created) && (nowMs - created) > EXPIRE) continue;
+           }
            if (rowSeats) rowSeats.split(',').map(s => s.trim()).filter(Boolean).forEach(s => bookedSet.add(s));
          }
        }
@@ -272,161 +307,177 @@
        zoneText,
        totalPayable,
        'Pending Payment',
-       bookingRef       // HitPay Ref — we store our own ref, HitPay will echo it back
+       bookingRef       // Booking Ref — used to match payment to booking
      ];
    
      await sheetsAppend(env, token, eventId, [row]);
      await ensureEventRegistered(env, token, data, sheetMeta);
    
-     // Create HitPay payment request
-     const hitpayPayload = new FormData();
-     hitpayPayload.append('amount',           totalPayable.toFixed(2));
-     hitpayPayload.append('currency',         'SGD');
-     hitpayPayload.append('email',            data.email);
-     hitpayPayload.append('name',             data.name);
-     hitpayPayload.append('purpose',          `${data.eventTitle || eventId} — Seats: ${seatsToBook.join(', ')}`);
-     hitpayPayload.append('reference_number', bookingRef);
-     hitpayPayload.append('redirect_url',     `${SITE_URL}/booking-success.html?ref=${encodeURIComponent(bookingRef)}&eventId=${encodeURIComponent(eventId)}`);
-     hitpayPayload.append('webhook',          `https://lsm-bookings.lightandshadowmdeiasg.workers.dev/webhook`);
-     hitpayPayload.append('allow_repeated_payments', 'false');
-   
-     const hitpayRes = await fetch(HITPAY_API, {
-       method:  'POST',
-       headers: { 'X-BUSINESS-API-KEY': env.HITPAY_API_KEY },
-       body:    hitpayPayload
-     });
-   
-     const hitpayData = await hitpayRes.json();
-     console.log('HitPay response:', JSON.stringify(hitpayData));
-   
-     if (!hitpayRes.ok || !hitpayData.url) {
-       console.error('HitPay payment request failed:', JSON.stringify(hitpayData));
-   
-       // HitPay unavailable — send PayNow confirmation email so customer knows how to pay
-       try {
-         await sendPayNowEmail(env, token, {
-           to:          data.email,
-           name:        data.name,
-           eventTitle:  data.eventTitle || '',
-           eventDate:   data.eventDate  || '',
-           venue:       data.venue      || '',
-           seats:       seatsToBook,
-           totalPayable,
-           bookingRef
-         });
-         console.log('PayNow fallback email sent to', data.email);
-       } catch (emailErr) {
-         console.error('PayNow fallback email failed:', emailErr);
-       }
-   
-       return corsResponse(JSON.stringify({
-         success:  true,
-         paynow:   true,
+     // Send PayNow confirmation email — customer pays directly to UOB account
+     try {
+       await sendPayNowEmail(env, token, {
+         to:          data.email,
+         name:        data.name,
+         eventTitle:  data.eventTitle || '',
+         eventDate:   data.eventDate  || '',
+         venue:       data.venue      || '',
+         seats:       seatsToBook,
+         totalPayable,
          bookingRef
-       }), 200, origin);
+       });
+       console.log('PayNow confirmation email sent to', data.email);
+     } catch (emailErr) {
+       console.error('PayNow email failed:', emailErr);
+       // Non-fatal — booking is saved, admin can resend
      }
    
      return corsResponse(JSON.stringify({
-       success:    true,
-       paymentUrl: hitpayData.url,
+       success:   true,
+       paynow:    true,
        bookingRef
      }), 200, origin);
    }
    
    
    // ============================================================
-   // POST /webhook — HitPay payment confirmation
-   // HitPay sends form-encoded POST when payment is completed
-   // We verify HMAC, update Sheets, send ticket email with QR codes
+   // POST /webhook — UOB PayNow payment notification
+   // ============================================================
+   // STATUS: Stub ready for UOB API integration
+   //
+   // When UOB API is approved and active, this endpoint receives
+   // a payment notification from UOB when a PayNow payment lands.
+   //
+   // UOB will send a signed JSON payload. Integration steps:
+   //   1. Add UOB_WEBHOOK_SECRET as a Cloudflare Worker secret
+   //   2. Verify UOB signature using env.UOB_WEBHOOK_SECRET
+   //   3. Parse referenceNum from payload (matches our bookingRef)
+   //   4. Call processConfirmedPayment(referenceNum, env)
+   //
+   // UOB Developer Portal: https://developers.uobgroup.com/en/
    // ============================================================
    async function handleWebhook(request, env) {
-     const body    = await request.text();
-     const params  = new URLSearchParams(body);
+     const body = await request.text();
+     let payload;
    
-     const status        = params.get('status')           || '';
-     const referenceNum  = params.get('reference_number') || '';
-     const hitpayRef     = params.get('payment_id')       || '';
-     const amount        = params.get('amount')           || '';
-     const currency      = params.get('currency')         || '';
-     const hmacReceived  = params.get('hmac')             || '';
-   
-     console.log('Webhook received:', { status, referenceNum, hitpayRef, amount });
-   
-     // Verify HMAC signature
-     const isValid = await verifyHitPayHmac(params, hmacReceived, env.HITPAY_SALT);
-     if (!isValid) {
-       console.error('HMAC verification failed');
-       return new Response('Unauthorized', { status: 401 });
+     try {
+       payload = JSON.parse(body);
+     } catch {
+       console.error('Webhook: invalid JSON body');
+       return new Response('Bad Request', { status: 400 });
      }
    
-     // Only process completed payments
-     if (status !== 'completed') {
-       console.log('Payment not completed, status:', status);
+     console.log('Webhook received:', JSON.stringify(payload));
+   
+     // ── UOB SIGNATURE VERIFICATION ──────────────────────────────
+     // TODO: Replace this block with UOB-specific HMAC/signature verification
+     // once UOB API credentials are issued.
+     //
+     // Example structure (confirm with UOB docs):
+     //   const signature    = request.headers.get('X-UOB-Signature') || '';
+     //   const isValid      = await verifyUOBSignature(body, signature, env.UOB_WEBHOOK_SECRET);
+     //   if (!isValid) return new Response('Unauthorized', { status: 401 });
+     //
+     const isValid = typeof env.UOB_WEBHOOK_SECRET !== 'undefined'
+       ? false   // Reject all until UOB verification is implemented
+       : false;  // Also reject in dev — use /admin-confirm for manual flow
+   
+     if (!isValid) {
+       console.log('Webhook: UOB verification pending — use admin confirm for now');
        return new Response('OK', { status: 200 });
      }
    
+     // ── PARSE UOB PAYLOAD ────────────────────────────────────────
+     // TODO: Adjust field names to match UOB's actual payload structure
+     // UOB docs: https://developers.uobgroup.com/en/apis-documentation
+     //
+     // Expected fields (confirm with UOB):
+     //   payload.status         — e.g. "SUCCESS"
+     //   payload.referenceNo    — our bookingRef (LSM-event-xxx-timestamp)
+     //   payload.amount         — amount paid
+     //   payload.currency       — "SGD"
+     //   payload.transactionId  — UOB transaction ID
+     //
+     const status       = String(payload.status      || '').toUpperCase();
+     const referenceNum = String(payload.referenceNo || payload.reference_number || '').trim();
+   
+     if (status !== 'SUCCESS' && status !== 'COMPLETED') {
+       console.log('Webhook: non-success status:', status);
+       return new Response('OK', { status: 200 });
+     }
+   
+     if (!referenceNum) {
+       console.error('Webhook: no reference number in payload');
+       return new Response('OK', { status: 200 });
+     }
+   
+     // ── PROCESS CONFIRMED PAYMENT ────────────────────────────────
+     await processConfirmedPayment(referenceNum, env);
+   
+     return new Response('OK', { status: 200 });
+   }
+   
+   
+   // ============================================================
+   // SHARED — Process a confirmed payment by booking reference
+   // Called by: handleWebhook (UOB) and handleAdminConfirm
+   // ============================================================
+   async function processConfirmedPayment(referenceNum, env) {
      // Parse eventId from bookingRef: LSM-event-001-1234567890
-     // referenceNum = bookingRef we set earlier
      const parts   = referenceNum.split('-');
-     // bookingRef format: LSM-event-001-TIMESTAMP
-     // eventId = everything between LSM- and the last -TIMESTAMP
      const eventId = parts.slice(1, -1).join('-'); // e.g. "event-001"
    
      if (!eventId) {
-       console.error('Could not parse eventId from reference:', referenceNum);
-       return new Response('OK', { status: 200 });
+       console.error('processConfirmedPayment: could not parse eventId from', referenceNum);
+       return;
      }
    
      const token  = await getAccessToken(env);
-     const values = await sheetsRead(env, token, eventId, 'A:I');
+     const values = await sheetsRead(env, token, eventId, 'A:J');
    
      if (!values || values.length <= 1) {
-       console.error('No bookings found for event:', eventId);
-       return new Response('OK', { status: 200 });
+       console.error('processConfirmedPayment: no bookings for event', eventId);
+       return;
      }
    
-     const header      = values[0];
-     const hitpayCol   = header.indexOf('HitPay Ref');
-     const statusCol   = header.indexOf('Payment Status');
-     const nameCol     = header.indexOf('Name');
-     const emailCol    = header.indexOf('Email');
-     const seatsCol    = header.indexOf('Seats');
-     const totalCol    = header.indexOf('Total Payable');
+     const header    = values[0];
+     const refCol    = Math.max(header.indexOf('Booking Ref'), header.indexOf('HitPay Ref'));
+     const statusCol = header.indexOf('Payment Status');
+     const nameCol   = header.indexOf('Name');
+     const emailCol  = header.indexOf('Email');
+     const seatsCol  = header.indexOf('Seats');
+     const totalCol  = header.indexOf('Total Payable');
    
-     if (hitpayCol === -1 || statusCol === -1) {
-       console.error('Header mismatch in sheet');
-       return new Response('OK', { status: 200 });
+     if (refCol === -1 || statusCol === -1) {
+       console.error('processConfirmedPayment: header mismatch');
+       return;
      }
    
-     // Find the matching row by our bookingRef stored in HitPay Ref column
-     let targetRow    = -1;
-     let bookingData  = {};
+     let targetRow   = -1;
+     let bookingData = {};
    
      for (let i = 1; i < values.length; i++) {
-       const rowRef = String(values[i][hitpayCol] || '').trim();
-       if (rowRef === referenceNum) {
-         targetRow   = i + 1; // 1-indexed
+       if (String(values[i][refCol] || '').trim() === referenceNum) {
+         targetRow   = i + 1;
          bookingData = {
-           name:    String(values[i][nameCol]  || '').trim(),
-           email:   String(values[i][emailCol] || '').trim(),
-           seats:   String(values[i][seatsCol] || '').trim().split(',').map(s => s.trim()).filter(Boolean),
-           total:   String(values[i][totalCol] || '').trim(),
-           row:     i + 1
+           name:  String(values[i][nameCol]  || '').trim(),
+           email: String(values[i][emailCol] || '').trim(),
+           seats: String(values[i][seatsCol] || '').trim().split(',').map(s => s.trim()).filter(Boolean),
+           total: String(values[i][totalCol] || '').trim()
          };
          break;
        }
      }
    
      if (targetRow === -1) {
-       console.error('Booking row not found for ref:', referenceNum);
-       return new Response('OK', { status: 200 });
+       console.error('processConfirmedPayment: booking not found for ref', referenceNum);
+       return;
      }
    
-     // Update Payment Status → Paid
-     const statusColLetter = columnToLetter(statusCol + 1);
-     const sheetId         = env.GOOGLE_SHEET_ID;
-     const rangeParam      = encodeURIComponent(`${eventId}!${statusColLetter}${targetRow}`);
+     const sheetId      = env.GOOGLE_SHEET_ID;
+     const statusLetter = columnToLetter(statusCol + 1);
+     const rangeParam   = encodeURIComponent(`${eventId}!${statusLetter}${targetRow}`);
    
+     // Update status → Paid
      await fetch(
        `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${rangeParam}?valueInputOption=RAW`,
        {
@@ -436,48 +487,31 @@
        }
      );
    
-     console.log(`Updated row ${targetRow} to Paid for booking ${referenceNum}`);
-   
-     // Fetch event details for the email
-     let eventTitle = eventId;
-     let eventDate  = '';
-     let venue      = '';
-   
+     // Fetch event details
+     let eventTitle = eventId, eventDate = '', venue = '';
      try {
-       const eventsValues = await sheetsRead(env, token, EVENTS_TAB, 'A:G');
-       if (eventsValues && eventsValues.length > 1) {
-         const evHeader     = eventsValues[0];
-         const evIdCol      = evHeader.indexOf('Event ID');
-         const evTitleCol   = evHeader.indexOf('Event Title');
-         const evDateCol    = evHeader.indexOf('Date');
-         const evVenueCol   = evHeader.indexOf('Venue');
-         const evRow        = eventsValues.slice(1).find(r => String(r[evIdCol] || '').trim() === eventId);
+       const evValues = await sheetsRead(env, token, EVENTS_TAB, 'A:L');
+       if (evValues && evValues.length > 1) {
+         const evH   = evValues[0];
+         const evRow = evValues.slice(1).find(r => String(r[evH.indexOf('Event ID')] || '').trim() === eventId);
          if (evRow) {
-           eventTitle = String(evRow[evTitleCol] || '').trim() || eventId;
-           eventDate  = String(evRow[evDateCol]  || '').trim();
-           venue      = String(evRow[evVenueCol] || '').trim();
+           eventTitle = String(evRow[evH.indexOf('Event Title')] || '').trim() || eventId;
+           eventDate  = String(evRow[evH.indexOf('Date')]        || '').trim();
+           venue      = String(evRow[evH.indexOf('Venue')]       || '').trim();
          }
        }
-     } catch (e) {
-       console.error('Could not fetch event details:', e);
-     }
+     } catch (e) { console.error('Event details fetch failed:', e); }
    
-     // Send ticket email with QR codes
+     // Send QR ticket email
      try {
        await sendTicketEmail(env, token, {
-         to:         bookingData.email,
-         name:       bookingData.name,
-         eventTitle,
-         eventDate,
-         venue,
-         seats:      bookingData.seats,
-         bookingRef: referenceNum,
-         eventId,
-         total:      bookingData.total
+         to: bookingData.email, name: bookingData.name,
+         eventTitle, eventDate, venue,
+         seats: bookingData.seats, bookingRef: referenceNum,
+         eventId, total: bookingData.total
        });
-       console.log('Ticket email sent to', bookingData.email);
    
-       // Update status to Ticket Sent
+       // Update status → Ticket Sent
        await fetch(
          `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${rangeParam}?valueInputOption=RAW`,
          {
@@ -486,11 +520,10 @@
            body:    JSON.stringify({ values: [['Ticket Sent']] })
          }
        );
+       console.log('Ticket sent for', referenceNum);
      } catch (emailErr) {
        console.error('Ticket email failed:', emailErr);
      }
-   
-     return new Response('OK', { status: 200 });
    }
    
    
@@ -601,7 +634,7 @@
          const zoneCol   = header.indexOf('Zone');
          const totalCol  = header.indexOf('Total Payable');
          const statusCol = header.indexOf('Payment Status');
-         const refCol    = header.indexOf('HitPay Ref');
+         const refCol    = Math.max(header.indexOf('Booking Ref'), header.indexOf('HitPay Ref'));
    
          for (let i = 1; i < values.length; i++) {
            const status = String(values[i][statusCol] || '').trim();
@@ -675,7 +708,7 @@
      }
    
      const header    = values[0];
-     const refCol    = header.indexOf('HitPay Ref');
+     const refCol    = Math.max(header.indexOf('Booking Ref'), header.indexOf('HitPay Ref'));
      const statusCol = header.indexOf('Payment Status');
      const nameCol   = header.indexOf('Name');
      const emailCol  = header.indexOf('Email');
@@ -702,57 +735,14 @@
        return corsResponse(JSON.stringify({ success: false, error: 'Booking not found.' }), 200, origin);
      }
    
-     // Update status to Ticket Sent
-     const sheetId      = env.GOOGLE_SHEET_ID;
-     const statusLetter = columnToLetter(statusCol + 1);
-     const statusRange  = encodeURIComponent(`${eventId}!${statusLetter}${targetRow}`);
-   
-     await fetch(
-       `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${statusRange}?valueInputOption=RAW`,
-       {
-         method:  'PUT',
-         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-         body:    JSON.stringify({ values: [['Ticket Sent']] })
-       }
-     );
-   
-     // Fetch event details
-     let eventTitle = eventId, eventDate = '', venue = '';
+     // Delegate to shared processConfirmedPayment — same logic as UOB webhook
      try {
-       const evValues = await sheetsRead(env, token, EVENTS_TAB, 'A:G');
-       if (evValues && evValues.length > 1) {
-         const evH     = evValues[0];
-         const evIdCol = evH.indexOf('Event ID');
-         const evRow   = evValues.slice(1).find(r => String(r[evIdCol] || '').trim() === eventId);
-         if (evRow) {
-           eventTitle = String(evRow[evH.indexOf('Event Title')] || '').trim() || eventId;
-           eventDate  = String(evRow[evH.indexOf('Date')]        || '').trim();
-           venue      = String(evRow[evH.indexOf('Venue')]       || '').trim();
-         }
-       }
-     } catch (e) { console.error('Event details fetch failed:', e); }
-   
-     // Send QR ticket email
-     try {
-       await sendTicketEmail(env, token, {
-         to:         booking.email,
-         name:       booking.name,
-         eventTitle,
-         eventDate,
-         venue,
-         seats:      booking.seats,
-         bookingRef: ref,
-         eventId,
-         total:      booking.total
-       });
-     } catch (emailErr) {
-       // Status already updated — log but don't fail
-       console.error('Ticket email failed:', emailErr);
+       await processConfirmedPayment(ref, env);
+     } catch (e) {
+       console.error('Admin confirm failed:', e);
        return corsResponse(JSON.stringify({
-         success: true,
-         warning: 'Status updated but ticket email failed. Check logs.',
-         name:    booking.name,
-         email:   booking.email
+         success: false,
+         error:   'Failed to process confirmation. Check logs.',
        }), 200, origin);
      }
    
@@ -820,7 +810,7 @@
      }
    
      const header         = values[0];
-     const refCol         = header.indexOf('HitPay Ref');
+     const refCol         = Math.max(header.indexOf('Booking Ref'), header.indexOf('HitPay Ref'));
      const seatsCol       = header.indexOf('Seats');
      const statusCol      = header.indexOf('Payment Status');
      const nameCol        = header.indexOf('Name');
@@ -1012,25 +1002,22 @@
    }
    
    // ============================================================
-   // HITPAY HMAC VERIFICATION
+   // UOB WEBHOOK SIGNATURE VERIFICATION
    // ============================================================
-   async function verifyHitPayHmac(params, receivedHmac, salt) {
-     // HitPay HMAC: sort all params (except hmac) alphabetically, join as key=value, HMAC-SHA256 with salt
-     const entries = [];
-     for (const [key, value] of params.entries()) {
-       if (key === 'hmac') continue;
-       entries.push([key, value]);
-     }
-     entries.sort((a, b) => a[0].localeCompare(b[0]));
-   
-     const message   = entries.map(([k, v]) => `${k}${v}`).join('');
-     const keyData   = new TextEncoder().encode(salt);
-     const msgData   = new TextEncoder().encode(message);
+   // TODO: Implement once UOB API credentials and documentation
+   // confirm the exact signature scheme used.
+   //
+   // UOB Developer Portal: https://developers.uobgroup.com/en/
+   // Contact: TB Cash Sales team for API onboarding
+   //
+   async function verifyUOBSignature(body, signature, secret) {
+     if (!secret || !signature) return false;
+     const keyData   = new TextEncoder().encode(secret);
+     const msgData   = new TextEncoder().encode(body);
      const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-     const signature = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
-     const computed  = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
-   
-     return computed === receivedHmac;
+     const sigBytes  = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
+     const computed  = Array.from(new Uint8Array(sigBytes)).map(b => b.toString(16).padStart(2, '0')).join('');
+     return computed === signature;
    }
    
    
@@ -1083,7 +1070,7 @@
        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f9f9;border:1px solid #e5e5e5;border-radius:8px;">
          <tr><td style="padding:20px;">
            <p style="margin:0 0 8px;color:#333;"><strong>(1)</strong> PayNow to UEN: <strong style="color:#c9a227;font-size:1.3rem;">53384102W</strong><br><span style="color:#888;font-size:0.8rem;">LIGHT AND SHADOW MEDIA</span></p>
-           <p style="margin:12px 0 8px;color:#333;"><strong>(2)</strong> Add reference: <strong style="color:#c9a227;">${seatList}</strong></p>
+           <p style="margin:12px 0 8px;color:#333;"><strong>(2)</strong> Add reference / မှတ်ချက်: <strong style="color:#c9a227;font-size:1.1rem;">${bookingRef}</strong></p>
            <p style="margin:0 0 12px;color:#333;"><strong>(3)</strong> Send payment screenshot to <strong>ShweTV Messenger</strong>.</p>
            <p style="color:#555;font-size:0.85rem;border-top:1px solid #e5e5e5;padding-top:12px;">&#128233; Your e-ticket will be sent within <strong>24 hours</strong> after payment is confirmed.</p>
          </td></tr>
@@ -1094,14 +1081,14 @@
        <p style="color:#c9a227;font-weight:bold;margin:0 0 8px;">&#10003; Booking လက်ခံရှိပါသည်။</p>
        <p style="color:#ccc;font-size:0.85rem;margin:0 0 6px;"><strong style="color:#c9a227;">ပွဲ:</strong> ${eventTitle} &nbsp;|&nbsp; <strong style="color:#c9a227;">ခုံ:</strong> ${seatList}</p>
        <p style="color:#ccc;font-size:0.85rem;margin:0 0 6px;"><strong style="color:#c9a227;">(1)</strong> PayNow UEN <strong style="color:#c9a227;">53384102W</strong> သို့ SGD $${totalPayable} လွှဲပါ</p>
-       <p style="color:#ccc;font-size:0.85rem;margin:0 0 6px;"><strong style="color:#c9a227;">(2)</strong> Reference: <strong style="color:#c9a227;">${seatList}</strong></p>
+       <p style="color:#ccc;font-size:0.85rem;margin:0 0 6px;"><strong style="color:#c9a227;">(2)</strong> Reference: <strong style="color:#c9a227;">${bookingRef}</strong></p>
        <p style="color:#ccc;font-size:0.85rem;margin:0;"><strong style="color:#c9a227;">(3)</strong> Screenshot ကို ShweTV Messenger ပို့ပါ။ ၂၄ နာရီအတွင်း E-ticket ပို့မည်။</p>
      </td></tr>
-     <tr><td style="background:#f4f4f5;padding:16px;text-align:center;"><p style="font-size:0.75rem;color:#999;margin:0;">&copy; 2026 Light &amp; Shadow Media. All rights reserved.</p></td></tr>
+     <tr><td style="background:#f4f4f5;padding:16px;text-align:center;"><p style="font-size:0.75rem;color:#999;margin:0;">&copy; 2026 Light and Shadow Media. All rights reserved.</p></td></tr>
    </table></td></tr></table></body></html>`;
    
      const rawEmail = [
-       `From: Light & Shadow Media <${fromEmail}>`,
+       `From: Light and Shadow Media <${fromEmail}>`,
        `To: ${to}`,
        `Subject: ${subjectEncoded}`,
        `MIME-Version: 1.0`,
@@ -1255,7 +1242,7 @@
      <tr>
        <td style="background:#f4f4f5;padding:20px 32px;text-align:center;">
          <p style="font-size:0.75rem;color:#999;margin:0;">
-           &copy; 2026 Light &amp; Shadow Media. All rights reserved.<br>
+           &copy; 2026 Light and Shadow Media. All rights reserved.<br>
            Booking Ref: ${bookingRef}
          </p>
        </td>
@@ -1268,7 +1255,7 @@
    </html>`;
    
      const rawEmail = [
-       `From: Light & Shadow Media <${fromEmail}>`,
+       `From: Light and Shadow Media <${fromEmail}>`,
        `To: ${to}`,
        `Subject: ${subjectEncoded}`,
        `MIME-Version: 1.0`,
@@ -1371,6 +1358,151 @@
      return letter;
    }
    
+   
+   
+   
+   // ============================================================
+   // GET /seatmap?eventId=xxx — public endpoint
+   // Returns seatmap.json merged with per-event overrides from Sheets
+   // If no override tab exists, returns raw seatmap.json
+   // ============================================================
+   async function handlePublicSeatmap(request, env, origin) {
+     const url     = new URL(request.url);
+     const eventId = (url.searchParams.get('eventId') || '').trim();
+   
+     if (!eventId || !/^[a-zA-Z0-9_-]{1,50}$/.test(eventId)) {
+       return corsResponse(JSON.stringify({ error: 'Invalid event ID.' }), 400, origin);
+     }
+   
+     const token     = await getAccessToken(env);
+     const sheetMeta = await getSheetMeta(env, token);
+     const tabName   = `seatmap-${eventId}`;
+     const tabExists = sheetMeta.sheets.some(s => s.properties.title === tabName);
+   
+     if (!tabExists) {
+       return corsResponse(JSON.stringify({ useDefault: true }), 200, origin);
+     }
+   
+     const values = await sheetsRead(env, token, tabName, 'A:C');
+     if (!values || values.length < 2) {
+       return corsResponse(JSON.stringify({ useDefault: true }), 200, origin);
+     }
+   
+     // Two sections separated by blank row:
+     // Section 1: ZONES header → Zone | Color | Price
+     // Section 2: OVERRIDES header → Seat | Zone | State
+     const zones = {};
+     const overrides = {};
+     let section = null;
+   
+     for (const row of values) {
+       const first = String(row[0] || '').trim().toUpperCase();
+       if (!first) { section = null; continue; }
+       if (first === 'ZONES')     { section = 'zones';     continue; }
+       if (first === 'OVERRIDES') { section = 'overrides'; continue; }
+   
+       if (section === 'zones') {
+         const color = String(row[1] || '').trim();
+         const price = Number(row[2] || 0);
+         zones[first] = { color, price };
+       }
+       if (section === 'overrides') {
+         const zone  = String(row[1] || '').trim().toUpperCase() || null;
+         const state = String(row[2] || '').trim().toUpperCase() || 'AVAILABLE';
+         overrides[first] = { zone, state };
+       }
+     }
+   
+     return corsResponse(JSON.stringify({ useDefault: false, zones, overrides }), 200, origin);
+   }
+   
+   
+   // ============================================================
+   // GET /admin-seatmap?eventId=xxx — get seatmap config for admin
+   // ============================================================
+   async function handleAdminGetSeatmap(request, env, origin) {
+     const adminToken = request.headers.get('X-Admin-Token');
+     if (!adminToken || adminToken !== env.ADMIN_SECRET) {
+       return corsResponse(JSON.stringify({ success: false, error: 'Unauthorized.' }), 401, origin);
+     }
+   
+     const url     = new URL(request.url);
+     const eventId = (url.searchParams.get('eventId') || '').trim();
+     if (!eventId) return corsResponse(JSON.stringify({ success: false, error: 'Missing eventId.' }), 400, origin);
+   
+     const token     = await getAccessToken(env);
+     const sheetMeta = await getSheetMeta(env, token);
+     const tabName   = `seatmap-${eventId}`;
+     const tabExists = sheetMeta.sheets.some(s => s.properties.title === tabName);
+   
+     if (!tabExists) {
+       return corsResponse(JSON.stringify({ success: true, exists: false, eventId }), 200, origin);
+     }
+   
+     const values = await sheetsRead(env, token, tabName, 'A:D');
+     return corsResponse(JSON.stringify({ success: true, exists: true, eventId, values }), 200, origin);
+   }
+   
+   
+   // ============================================================
+   // POST /admin-seatmap — save seatmap config for an event
+   // Creates or overwrites seatmap-{eventId} tab
+   // Body: { eventId, zones: [{name,color,price}], rowRanges: [{from,to,zone}], overrides: [{seat,zone,state}] }
+   // ============================================================
+   async function handleAdminSaveSeatmap(request, env, origin) {
+     const adminToken = request.headers.get('X-Admin-Token');
+     if (!adminToken || adminToken !== env.ADMIN_SECRET) {
+       return corsResponse(JSON.stringify({ success: false, error: 'Unauthorized.' }), 401, origin);
+     }
+   
+     const data = await request.json();
+     const { eventId, zones, rowRanges, overrides } = data;
+   
+     if (!eventId) return corsResponse(JSON.stringify({ success: false, error: 'Missing eventId.' }), 400, origin);
+     if (!/^[a-zA-Z0-9_-]{1,50}$/.test(eventId)) {
+       return corsResponse(JSON.stringify({ success: false, error: 'Invalid event ID.' }), 400, origin);
+     }
+   
+     const token     = await getAccessToken(env);
+     const sheetMeta = await getSheetMeta(env, token);
+     const tabName   = `seatmap-${eventId}`;
+     const tabExists = sheetMeta.sheets.some(s => s.properties.title === tabName);
+   
+     if (!tabExists) {
+       await createTab(env, token, tabName);
+     } else {
+       // Clear existing data
+       const sheetId    = env.GOOGLE_SHEET_ID;
+       const rangeParam = encodeURIComponent(`${tabName}!A:D`);
+       await fetch(
+         `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${rangeParam}:clear`,
+         { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+       );
+     }
+   
+     // Build rows to write — two sections: ZONES then OVERRIDES
+     const rows = [];
+   
+     // Section 1: Zones
+     rows.push(['ZONES', 'Color', 'Price']);
+     (zones || []).forEach(z => {
+       rows.push([String(z.name || '').toUpperCase(), z.color || '', String(z.price || '0')]);
+     });
+     rows.push(['', '', '']); // blank separator
+   
+     // Section 2: Seat Overrides
+     rows.push(['OVERRIDES', 'Zone', 'State']);
+     (overrides || []).forEach(o => {
+       rows.push([
+         String(o.seat  || '').toUpperCase(),
+         String(o.zone  || '').toUpperCase(),
+         String(o.state || 'AVAILABLE').toUpperCase()
+       ]);
+     });
+   
+     await sheetsAppend(env, token, tabName, rows);
+     return corsResponse(JSON.stringify({ success: true, message: `Seatmap saved for ${eventId}.` }), 200, origin);
+   }
    
    
    // ============================================================
@@ -1619,7 +1751,7 @@
      }
    
      const header    = values[0];
-     const refCol    = header.indexOf('HitPay Ref');
+     const refCol    = Math.max(header.indexOf('Booking Ref'), header.indexOf('HitPay Ref'));
      const nameCol   = header.indexOf('Name');
      const emailCol  = header.indexOf('Email');
      const seatsCol  = header.indexOf('Seats');
