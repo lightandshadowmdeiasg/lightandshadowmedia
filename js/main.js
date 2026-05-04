@@ -484,20 +484,58 @@ const ProjectLoader = {
     createCard(item, index) {
         const category = item.client || item.venue || item.role || item.status || 'Project';
         const year = item.year || (item.date ? new Date(item.date).getFullYear() : '');
-    
+
         // Show booking button only on the Live Events page
-        const isLiveEvents = this.source && this.source.indexOf('live-events') !== -1;
-        const isBookable   = isLiveEvents && item.status === 'upcoming';
+        const isLiveEvents = this.source && (
+            this.source.indexOf('live-events') !== -1 ||
+            this.source.indexOf('workers.dev/events') !== -1
+        );
+        const isBookable = isLiveEvents && (item.bookingStatus === 'open' || item.status === 'upcoming');
 
-        const bookingButton = isBookable ? `
-                <div class="project-actions" style="margin-top: 1rem;">
-                    <button class="btn btn-primary js-open-booking" type="button">
-                        Book Seat
-                    </button>
+        // ── LIVE EVENTS: horizontal card layout ──────────────────────
+        if (isLiveEvents) {
+            const thumbUrl = resolveThumbUrl(item.thumbnail);
+            const statusLabel = item.bookingStatus === 'open'
+                ? `<span class="ev-badge ev-badge-open">Bookings Open</span>`
+                : `<span class="ev-badge ev-badge-closed">Bookings Closed</span>`;
+
+            const bookingButton = isBookable ? `
+                <button class="btn btn-primary js-open-booking" type="button" style="margin-top:auto;align-self:flex-start;">
+                    Book Seat
+                </button>` : '';
+
+            return `
+            <article class="event-list-card stagger-item" data-index="${index}">
+                <div class="elc-thumb">
+                    ${thumbUrl
+                        ? `<img src="${thumbUrl}" alt="${item.title}" loading="lazy"
+                            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+                        : ''}
+                    <div class="elc-thumb-placeholder" style="${thumbUrl ? 'display:none' : ''}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <rect x="2" y="2" width="20" height="20" rx="2"/>
+                            <circle cx="8" cy="8" r="2"/>
+                            <path d="M2 15l5-5 4 4 5-5 6 6"/>
+                        </svg>
+                    </div>
                 </div>
-        ` : '';
+                <div class="elc-body">
+                    <div class="elc-meta">
+                        <span class="project-category">${category}${year ? ` • ${year}` : ''}</span>
+                        ${statusLabel}
+                    </div>
+                    <h3 class="elc-title">${item.title}</h3>
+                    <p class="elc-desc">${item.description || ''}</p>
+                    ${bookingButton}
+                </div>
+                ${item.videoUrl ? `
+                    <div class="project-play-btn">
+                        <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></polygon></svg>
+                    </div>` : ''}
+            </article>`;
+        }
 
-    
+        // ── DEFAULT: original grid card layout ───────────────────────
         return `
             <article class="project-card stagger-item" data-index="${index}">
                 ${item.thumbnail ?
@@ -521,7 +559,6 @@ const ProjectLoader = {
                     <span class="project-category">${category}${year ? ` • ${year}` : ''}</span>
                     <h3>${item.title}</h3>
                     <p>${item.description || ''}</p>
-                    ${bookingButton}
                 </div>
                 ${item.videoUrl ? `
                     <div class="project-play-btn">
