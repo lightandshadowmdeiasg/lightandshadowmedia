@@ -502,22 +502,23 @@ document.addEventListener('DOMContentLoaded', () => {
           const seatRef = seatDetails.map(s => s.seat).join(', ');
           const refId   = 'paynow-ref-' + Date.now();
           setBookingStatus(
+            `<div style="margin-bottom:10px;"><b>ဤစာကိုပြီးဆုံးအောင်အရင်ဖတ်ပေးပါ။ </b><br>` +
+            `Booking လက်ခံရှိပါသည်။ Email စစ်ဆေးပါ။<br>` +
             `<div style="text-align:center;margin-bottom:16px;">` +
             `<a href="assets/images/paynowqr.png" download="LSM-PayNowQR.png" title="Save QR Code" style="display:inline-block;position:relative;">` +
             `<img src="assets/images/paynowqr.png" alt="PayNow QR" style="width:200px;height:200px;display:block;margin:0 auto;border-radius:8px;">` +
             `<span style="display:block;margin-top:6px;font-size:0.72rem;color:#c9a227;letter-spacing:0.05em;">&#8681; Tap to Save QR</span>` +
             `</a>` +
             `</div>` +
-            `<div style="margin-bottom:10px;"><b>ဤစာကိုပြီးဆုံးအောင်အရင်ဖတ်ပေးပါ။ </b><br>` +
             `<div style="margin-bottom:10px;"><b>အပေါ်က Paynow QR ကို Scan ၍ Payment ပြုလုပ်ပေးပါ</b><br>` +
             `<b>Amount: SGD $${totalPrice.toFixed(2)}</b></div>` +
-            `<div style="font-size:0.82rem;margin-bottom:6px;"><b>Reference number ကို Copy လုပ်ပြီး Payment Refrence တွင် ထည့်ပေးပါ။</b></div>` +
+            `<div style="font-size:0.82rem;margin-bottom:6px;"><b>အောက်ပါခုံနံပါတ်(များ)ကို Copy လုပ်ပြီး Payment Refrence တွင် ထည့်ပေးပါ။</b></div>` +
             `<div style="display:flex;align-items:center;gap:8px;background:#f0f0f0;border-radius:6px;padding:8px 12px;margin-bottom:12px;">` +
             `<span style="flex:1;font-family:monospace;font-size:0.85rem;color:#111;word-break:break-all;" id="${refId}">${seatRef}</span>` +
             `<button onclick="(function(){navigator.clipboard.writeText('${seatRef}').then(function(){var b=document.getElementById('copy-btn-${refId}');b.textContent='Copied!';b.style.color='#1a7a3a';setTimeout(function(){b.textContent='Copy';b.style.color='';},2000);})})()" ` +
             `id="copy-btn-${refId}" style="flex-shrink:0;padding:5px 12px;background:#c9a227;color:#000;border:none;border-radius:5px;font-size:0.78rem;font-weight:700;cursor:pointer;">Copy</button>` +
             `</div>` +
-            `Booking လက်ခံရှိပါသည်။ Email စစ်ဆေးပါ။<br>` +
+            
             `Payment Screenshot ကို <b>Email သို့ Reply</b> ပြန်ပို့ပေးပါ။<br>` +
             `<span style="font-size:0.85rem;color:#888;">၂၄ နာရီအတွင်း E-ticket ပို့မည်။</span>`,
             'success',
