@@ -510,8 +510,12 @@ document.addEventListener('DOMContentLoaded', () => {
             `&#8681; Save QR to Device</button>` +
             `</div>` +
             `</div>` +
+            `<div style="margin-bottom:10px;"><b>iPhone: "QR ပုံကို ဖိထားပြီး Add to Photos နှိပ်ပါ"</b><br>` +
+            `<div style="margin-bottom:10px;"><b>Android: "QR ပုံကို ဖိထားပြီး Save Image နှိပ်ပါ</b><br>` +
             `<div style="margin-bottom:10px;"><b>အပေါ်က Paynow QR ကို Scan ၍ Payment ပြုလုပ်ပေးပါ</b><br>` +
             `<b>Amount: SGD $${totalPrice.toFixed(2)}</b></div>` +
+
+
             `<div style="font-size:0.82rem;margin-bottom:6px;"><b>အောက်ပါခုံနံပါတ်(များ)ကို Copy လုပ်ပြီး Payment Refrence တွင် ထည့်ပေးပါ။</b></div>` +
             `<div style="display:flex;align-items:center;gap:8px;background:#f0f0f0;border-radius:6px;padding:8px 12px;margin-bottom:12px;">` +
             `<span style="flex:1;font-family:monospace;font-size:0.85rem;color:#111;word-break:break-all;" id="${refId}">${seatRef}</span>` +
