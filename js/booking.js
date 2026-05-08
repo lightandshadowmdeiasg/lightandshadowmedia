@@ -508,16 +508,16 @@ document.addEventListener('DOMContentLoaded', () => {
             `<span style="display:block;margin-top:6px;font-size:0.72rem;color:#c9a227;letter-spacing:0.05em;">&#8681; Tap to Save QR</span>` +
             `</a>` +
             `</div>` +
-            `<div style="margin-bottom:10px;"><b>UEN: 53384102W</b> &nbsp;(LIGHT AND SHADOW MEDIA)<br>` +
+            `<div style="margin-bottom:10px;"><b>အပေါ်ရှိ QR Code ကို Scan ၍ ငွေပေးချေပေးပါ` +
             `<b>Amount: SGD $${totalPrice.toFixed(2)}</b></div>` +
-            `<div style="font-size:0.82rem;color:#555;margin-bottom:6px;">Reference number ကို Copy လုပ်ပါ</div>` +
+            `<div style="font-size:0.82rem;margin-bottom:6px;">Reference number ကို Copy လုပ်ပါ</div>` +
             `<div style="display:flex;align-items:center;gap:8px;background:#f0f0f0;border-radius:6px;padding:8px 12px;margin-bottom:12px;">` +
             `<span style="flex:1;font-family:monospace;font-size:0.85rem;color:#111;word-break:break-all;" id="${refId}">${ref}</span>` +
             `<button onclick="(function(){navigator.clipboard.writeText('${ref}').then(function(){var b=document.getElementById('copy-btn-${refId}');b.textContent='Copied!';b.style.color='#1a7a3a';setTimeout(function(){b.textContent='Copy';b.style.color='';},2000);})})()" ` +
             `id="copy-btn-${refId}" style="flex-shrink:0;padding:5px 12px;background:#c9a227;color:#000;border:none;border-radius:5px;font-size:0.78rem;font-weight:700;cursor:pointer;">Copy</button>` +
             `</div>` +
-            `Booking လက်ခံရှိပါသည်။ Email စစ်ဆေးပါ။<br>` +
-            `Screenshot ကို <b>ShweTV Messenger</b> ပို့ပါ။<br>` +
+            `Booking လက်ခံရှိပါသည်။ Email စစ်ဆေးပေးပါ။<br>` +
+            `Payment Screenshot ကို <b>ထို Email သို့ Reply </b> ပြန်ပို့ပေးပါ။<br>` +
             `<span style="font-size:0.85rem;color:#888;">၂၄ နာရီအတွင်း E-ticket ပို့မည်။</span>`,
             'success',
             'Pay via PayNow'
