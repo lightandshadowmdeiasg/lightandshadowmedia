@@ -156,18 +156,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // LOAD SEATMAP
   // ==========================================================
   function loadSeatMap() {
-    // Try worker seatmap first (has per-event zone/price/override config)
     fetch(`${SEATMAP_WORKER}?eventId=${encodeURIComponent(eventId)}`)
       .then(res => res.json())
       .then(workerData => {
         if (workerData.useDefault) {
-          // No override — load from seatmap.json as before
           return fetch(SEATMAP_SOURCE).then(r => r.json()).then(data => {
             seatmap = data;
             loadBookedSeats();
           });
         }
-        // Has override — load base seatmap.json then apply overrides
         return fetch(SEATMAP_SOURCE).then(r => r.json()).then(baseData => {
           seatmap = applySeatmapOverrides(baseData, workerData);
           loadBookedSeats();
@@ -184,16 +181,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // Apply per-event zone/state overrides onto base seatmap.json
   function applySeatmapOverrides(base, config) {
     const result = JSON.parse(JSON.stringify(base));
-
-    // Override zone definitions (price + color)
     if (config.zones && Object.keys(config.zones).length) {
       result.zones = config.zones;
     }
-
-    // Apply individual seat overrides
     if (config.overrides && Object.keys(config.overrides).length) {
       Object.keys(result.SEATPLAN).forEach(rowKey => {
         if (!/^[A-Z]$/.test(rowKey.trim())) return;
@@ -209,7 +201,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       });
     }
-
     return result;
   }
 
@@ -217,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const codes = new Set();
     const plan  = seatmap?.SEATPLAN;
     if (!plan) return codes;
-
     Object.keys(plan).forEach(rowKey => {
       if (!/^[A-Z]$/.test(rowKey)) return;
       const layout = plan[rowKey];
@@ -243,7 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let bookedCount  = 0;
     bookedSeats.forEach(code => { if (allSeats.has(code)) bookedCount++; });
     const available  = Math.max(0, allSeats.size - bookedCount);
-
     const bookedEl    = document.getElementById('bookedCount');
     const availableEl = document.getElementById('availableCount');
     if (bookedEl)    bookedEl.textContent    = String(bookedCount);
@@ -252,11 +241,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // ==========================================================
-  // LOAD BOOKED SEATS — now from Cloudflare Worker
+  // LOAD BOOKED SEATS
   // ==========================================================
   function loadBookedSeats() {
     const url = `${WORKER_URL}?eventId=${encodeURIComponent(eventId)}`;
-
     fetch(url)
       .then(res => res.json())
       .then(data => {
@@ -275,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // ==========================================================
-  // BUILD SEAT MAP (unchanged)
+  // BUILD SEAT MAP
   // ==========================================================
   function buildSeatMap() {
     seatGrid.innerHTML = '';
@@ -497,7 +485,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (data.success && data.paynow) {
-          // PayNow flow — show static UEN QR + instructions
           const ref     = data.bookingRef || '';
           const seatRef = seatDetails.map(s => s.seat).join(', ');
           const refId   = 'paynow-ref-' + Date.now();
@@ -505,20 +492,32 @@ document.addEventListener('DOMContentLoaded', () => {
             `<div style="margin-bottom:10px;"><b>ဤစာကိုပြီးဆုံးအောင်အရင်ဖတ်ပေးပါ။ </b><br>` +
             `Booking လက်ခံရှိပါသည်။ Email စစ်ဆေးပါ။<br>` +
             `<div style="text-align:center;margin-bottom:16px;">` +
-            `<a href="assets/images/paynowqr.png" download="LSM-PayNowQR.png" title="Save QR Code" style="display:inline-block;position:relative;">` +
-            `<img src="assets/images/paynowqr.png" alt="PayNow QR" style="width:200px;height:200px;display:block;margin:0 auto;border-radius:8px;">` +
-            `<span style="display:block;margin-top:6px;font-size:0.72rem;color:#c9a227;letter-spacing:0.05em;">&#8681; Tap to Save QR</span>` +
-            `</a>` +
+            `<div style="display:inline-block;position:relative;">` +
+            `<img src="assets/images/paynowqr.png" alt="PayNow QR" id="paynow-qr-img" style="width:200px;height:200px;display:block;margin:0 auto;border-radius:8px;">` +
+            `<button onclick="(function(){` +
+              `var img=new Image();img.crossOrigin='anonymous';img.onload=function(){` +
+                `var c=document.createElement('canvas');c.width=img.width;c.height=img.height;` +
+                `c.getContext('2d').drawImage(img,0,0);` +
+                `c.toBlob(function(blob){` +
+                  `var u=URL.createObjectURL(blob);` +
+                  `var a=document.createElement('a');a.href=u;a.download='LSM-PayNow-QR.png';` +
+                  `document.body.appendChild(a);a.click();` +
+                  `setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(u);},200);` +
+                `},'image/png');` +
+              `};img.src='assets/images/paynowqr.png?t='+Date.now();` +
+            `})()" ` +
+            `style="display:block;margin:8px auto 0;padding:7px 18px;background:#c9a227;color:#000;border:none;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;letter-spacing:0.04em;">` +
+            `&#8681; Save QR to Device</button>` +
+            `</div>` +
             `</div>` +
             `<div style="margin-bottom:10px;"><b>အပေါ်က Paynow QR ကို Scan ၍ Payment ပြုလုပ်ပေးပါ</b><br>` +
             `<b>Amount: SGD $${totalPrice.toFixed(2)}</b></div>` +
-            `<div style="font-size:0.82rem;margin-bottom:6px;"><b>အောက်ပါခုံနံပါတ်(များ)ကို Copy လုပ်ပြီး Payment Refrence တွင် ထည့်ပေးပါ။</b></div>` +
+            `<div style="font-size:0.82rem;margin-bottom:6px;"><b>အောက်ပါခုံနံပါတ်(များ)ကို Copy လုပ်ပြီး Payment Refrence တွင် ထည့်ပေးပါ။</b></div>` +
             `<div style="display:flex;align-items:center;gap:8px;background:#f0f0f0;border-radius:6px;padding:8px 12px;margin-bottom:12px;">` +
             `<span style="flex:1;font-family:monospace;font-size:0.85rem;color:#111;word-break:break-all;" id="${refId}">${seatRef}</span>` +
             `<button onclick="(function(){navigator.clipboard.writeText('${seatRef}').then(function(){var b=document.getElementById('copy-btn-${refId}');b.textContent='Copied!';b.style.color='#1a7a3a';setTimeout(function(){b.textContent='Copy';b.style.color='';},2000);})})()" ` +
             `id="copy-btn-${refId}" style="flex-shrink:0;padding:5px 12px;background:#c9a227;color:#000;border:none;border-radius:5px;font-size:0.78rem;font-weight:700;cursor:pointer;">Copy</button>` +
             `</div>` +
-            
             `Payment Screenshot ကို <b>Email သို့ Reply</b> ပြန်ပို့ပေးပါ။<br>` +
             `<span style="font-size:0.85rem;color:#888;">၂၄ နာရီအတွင်း E-ticket ပို့မည်။</span>`,
             'success',
@@ -531,7 +530,6 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        // Error
         setBookingStatus(data.error || '❌ Booking failed. Please try again.', 'error');
         submitBtn.disabled    = false;
         submitBtn.textContent = 'Confirm Booking';
@@ -557,9 +555,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const legend = document.querySelector('.legend');
     if (!legend) return;
     const zoneEntries = Object.entries(zones);
-    if (!zoneEntries.length) return; // keep hardcoded if no zones loaded
+    if (!zoneEntries.length) return;
 
-    // Build zone items dynamically
     let html = zoneEntries.map(([key, z]) => {
       const price = z.price != null ? ` - ${z.price} SGD` : '';
       const label = key.charAt(0) + key.slice(1).toLowerCase();
@@ -569,7 +566,6 @@ document.addEventListener('DOMContentLoaded', () => {
       </span>`;
     }).join('');
 
-    // Always append static Booked + Unavailable
     html += `<span class="legend-item">
       <span class="legend-box legend-booked"></span> Booked
     </span>
