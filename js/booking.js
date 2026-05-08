@@ -508,9 +508,10 @@ document.addEventListener('DOMContentLoaded', () => {
             `<span style="display:block;margin-top:6px;font-size:0.72rem;color:#c9a227;letter-spacing:0.05em;">&#8681; Tap to Save QR</span>` +
             `</a>` +
             `</div>` +
-            `<div style="margin-bottom:10px;"><b>UEN: 53384102W</b> &nbsp;(LIGHT AND SHADOW MEDIA)<br>` +
+            `<div style="margin-bottom:10px;"><b>ဤစာကိုပြီးဆုံးအောင်အရင်ဖတ်ပေးပါ။ </b><br>` +
+            `<div style="margin-bottom:10px;"><b>အပေါ်က Paynow QR ကို Scan ၍ Payment ပြုလုပ်ပေးပါ</b><br>` +
             `<b>Amount: SGD $${totalPrice.toFixed(2)}</b></div>` +
-            `<div style="font-size:0.82rem;color:#555;margin-bottom:6px;">Reference number ကို Copy လုပ်ပြီး Payment Refrence တွင် ထည့်ပေးပါ။</div>` +
+            `<div style="font-size:0.82rem;margin-bottom:6px;"><b>Reference number ကို Copy လုပ်ပြီး Payment Refrence တွင် ထည့်ပေးပါ။</b></div>` +
             `<div style="display:flex;align-items:center;gap:8px;background:#f0f0f0;border-radius:6px;padding:8px 12px;margin-bottom:12px;">` +
             `<span style="flex:1;font-family:monospace;font-size:0.85rem;color:#111;word-break:break-all;" id="${refId}">${seatRef}</span>` +
             `<button onclick="(function(){navigator.clipboard.writeText('${seatRef}').then(function(){var b=document.getElementById('copy-btn-${refId}');b.textContent='Copied!';b.style.color='#1a7a3a';setTimeout(function(){b.textContent='Copy';b.style.color='';},2000);})})()" ` +
