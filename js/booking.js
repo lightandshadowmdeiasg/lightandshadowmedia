@@ -126,12 +126,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      titleEl.textContent    = currentEvent.title;
+      const plainTitle = currentEvent.title.split('|').map(s => s.trim()).join(' ');
+      titleEl.innerHTML  = currentEvent.title.split('|').map(s => s.trim()).join('<br>');
       metaEl.textContent     = `${currentEvent.venue} • ${formatDateLabel(currentEvent.date)}`;
       eventIdInput.value     = currentEvent.id;
       eventDateInput.value   = currentEvent.date;
       eventVenueInput.value  = currentEvent.venue;
-      eventTitleHidden.value = currentEvent.title;
+      eventTitleHidden.value = plainTitle;
 
       // Show announcement banner if event has one
       const banner = document.getElementById('announcementBanner');
@@ -512,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `id="copy-btn-${refId}" style="flex-shrink:0;padding:5px 12px;background:#c9a227;color:#000;border:none;border-radius:5px;font-size:0.78rem;font-weight:700;cursor:pointer;">Copy</button>` +
             `</div>` +
             `<div style="margin-bottom:10px;"><b>iPhone: "QR ပုံကို ဖိထားပြီး Add to Photos နှိပ်ပါ"</b><br>` +
-            `<div style="margin-bottom:10px;"><b>Android: "QR ပုံကို ဖိထားပြီး Save Image နှိပ်ပါ</b><br>` +
+            `<div style="margin-bottom:10px;"><b>Android: "QR ပုံကို ဖိထားပြီး Save Image နှိပ်ပါ</b><br>` +  
             `Payment Screenshot ကို <b>Email သို့ Reply</b> ပြန်ပို့ပေးပါ။<br>` +
             `<span style="font-size:0.85rem;color:#888;">၂၄ နာရီအတွင်း E-ticket ပို့မည်။</span>`,
             'success',

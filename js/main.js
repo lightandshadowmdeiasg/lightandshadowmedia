@@ -369,7 +369,7 @@ const ProjectLoader = {
     grid: null,
     source: null,
     filterTabs: null,
-    currentFilter: 'all',
+    currentFilter: 'upcoming',
     data: null,
     
     async init() {
@@ -533,7 +533,7 @@ const ProjectLoader = {
                         <span class="project-category">${category}${year ? ` • ${year}` : ''}</span>
                         ${statusLabel}
                     </div>
-                    <h3 class="elc-title">${item.title}</h3>
+                    <h3 class="elc-title">${item.title.split('|').map(s => s.trim()).join('<br>')}</h3>
                     <p class="elc-desc">${item.description || ''}</p>
                     ${bookingButton}
                 </div>
