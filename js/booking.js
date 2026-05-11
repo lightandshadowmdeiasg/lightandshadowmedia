@@ -144,6 +144,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       loadSeatMap();
+
+      // Refresh booked seats every 60s so the map stays live
+      setInterval(() => {
+        if (!document.hidden) loadBookedSeats();
+      }, 60000);
     })
     .catch(err => {
       console.error('Failed to load events.json:', err);
@@ -244,8 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // LOAD BOOKED SEATS
   // ==========================================================
   function loadBookedSeats() {
-    const url = `${WORKER_URL}?eventId=${encodeURIComponent(eventId)}`;
-    fetch(url)
+    const url = `${WORKER_URL}?eventId=${encodeURIComponent(eventId)}&_=${Date.now()}`;
+    fetch(url, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data.bookedSeats)) {
@@ -493,36 +498,22 @@ document.addEventListener('DOMContentLoaded', () => {
             `Booking လက်ခံရှိပါသည်။ Email စစ်ဆေးပါ။<br>` +
             `<div style="text-align:center;margin-bottom:16px;">` +
             `<div style="display:inline-block;position:relative;">` +
-            `<img src="assets/images/paynowqr.png" alt="PayNow QR" id="paynow-qr-img" style="width:200px;height:200px;display:block;margin:0 auto;border-radius:8px;">` +
-            `<button onclick="(function(){` +
-              `var img=new Image();img.crossOrigin='anonymous';img.onload=function(){` +
-                `var c=document.createElement('canvas');c.width=img.width;c.height=img.height;` +
-                `c.getContext('2d').drawImage(img,0,0);` +
-                `c.toBlob(function(blob){` +
-                  `var u=URL.createObjectURL(blob);` +
-                  `var a=document.createElement('a');a.href=u;a.download='LSM-PayNow-QR.png';` +
-                  `document.body.appendChild(a);a.click();` +
-                  `setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(u);},200);` +
-                `},'image/png');` +
-              `};img.src='assets/images/paynowqr.png?t='+Date.now();` +
-            `})()" ` +
-            `style="display:block;margin:8px auto 0;padding:7px 18px;background:#c9a227;color:#000;border:none;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;letter-spacing:0.04em;">` +
-            `&#8681; Save QR to Device</button>` +
+            `<img src="assets/images/paynowqr.png" alt="PayNow QR" style="width:200px;height:200px;display:block;margin:0 auto;border-radius:8px;-webkit-touch-callout:default;">` +
+            `<div style="margin-top:8px;font-size:0.72rem;color:#c9a227;letter-spacing:0.04em;text-align:center;">&#128247; iPhone: QR ပုံကို ဖိထားပြီး <b>Add to Photos</b> နှိပ်ပါ</div>` +
+            `<div style="font-size:0.72rem;color:#aaa;text-align:center;">Android: QR ပုံကို ဖိထားပြီး Save Image နှိပ်ပါ</div>` +
             `</div>` +
             `</div>` +
-            `<div style="margin-bottom:10px;"><b>iPhone: "QR ပုံကို ဖိထားပြီး Add to Photos နှိပ်ပါ"</b><br>` +
-            `<div style="margin-bottom:10px;"><b>Android: "QR ပုံကို ဖိထားပြီး Save Image နှိပ်ပါ</b><br>` +
             `<div style="margin-bottom:10px;"><b>အပေါ်က Paynow QR ကို Scan ၍ Payment ပြုလုပ်ပေးပါ</b><br>` +
             `<b>Amount: SGD $${totalPrice.toFixed(2)}</b></div>` +
-
-
             `<div style="font-size:0.82rem;margin-bottom:6px;"><b>အောက်ပါခုံနံပါတ်(များ)ကို Copy လုပ်ပြီး Payment Refrence တွင် ထည့်ပေးပါ။</b></div>` +
             `<div style="display:flex;align-items:center;gap:8px;background:#f0f0f0;border-radius:6px;padding:8px 12px;margin-bottom:12px;">` +
             `<span style="flex:1;font-family:monospace;font-size:0.85rem;color:#111;word-break:break-all;" id="${refId}">${seatRef}</span>` +
             `<button onclick="(function(){navigator.clipboard.writeText('${seatRef}').then(function(){var b=document.getElementById('copy-btn-${refId}');b.textContent='Copied!';b.style.color='#1a7a3a';setTimeout(function(){b.textContent='Copy';b.style.color='';},2000);})})()" ` +
             `id="copy-btn-${refId}" style="flex-shrink:0;padding:5px 12px;background:#c9a227;color:#000;border:none;border-radius:5px;font-size:0.78rem;font-weight:700;cursor:pointer;">Copy</button>` +
             `</div>` +
-            `Payment Screenshot ကို <b> Booking Confirmed Email သို့ Reply</b> ပြန်ပို့ပေးပါ။<br>` +
+            `<div style="margin-bottom:10px;"><b>iPhone: "QR ပုံကို ဖိထားပြီး Add to Photos နှိပ်ပါ"</b><br>` +
+            `<div style="margin-bottom:10px;"><b>Android: "QR ပုံကို ဖိထားပြီး Save Image နှိပ်ပါ</b><br>` +
+            `Payment Screenshot ကို <b>Email သို့ Reply</b> ပြန်ပို့ပေးပါ။<br>` +
             `<span style="font-size:0.85rem;color:#888;">၂၄ နာရီအတွင်း E-ticket ပို့မည်။</span>`,
             'success',
             'Pay via PayNow'
