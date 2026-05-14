@@ -436,6 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!seats) { setBookingStatus('Please select at least one seat.', 'error'); return; }
     if (!name || !email || !phone) { setBookingStatus('Please fill in all details.', 'error'); return; }
+    if (!eventIdInput.value) { setBookingStatus('Event not loaded yet. Please wait and try again.', 'error'); return; }
 
     submitBtn.disabled    = true;
     submitBtn.textContent = 'Submitting...';
@@ -512,8 +513,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `<button onclick="(function(){navigator.clipboard.writeText('${seatRef}').then(function(){var b=document.getElementById('copy-btn-${refId}');b.textContent='Copied!';b.style.color='#1a7a3a';setTimeout(function(){b.textContent='Copy';b.style.color='';},2000);})})()" ` +
             `id="copy-btn-${refId}" style="flex-shrink:0;padding:5px 12px;background:#c9a227;color:#000;border:none;border-radius:5px;font-size:0.78rem;font-weight:700;cursor:pointer;">Copy</button>` +
             `</div>` +
-            `<div style="margin-bottom:10px;"><b>iPhone: "QR ပုံကို ဖိထားပြီး Add to Photos နှိပ်ပါ"</b><br>` +
-            `<div style="margin-bottom:10px;"><b>Android: "QR ပုံကို ဖိထားပြီး Save Image နှိပ်ပါ</b><br>` +  
             `Payment Screenshot ကို <b>Email သို့ Reply</b> ပြန်ပို့ပေးပါ။<br>` +
             `<span style="font-size:0.85rem;color:#888;">၂၄ နာရီအတွင်း E-ticket ပို့မည်။</span>`,
             'success',
