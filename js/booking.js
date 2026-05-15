@@ -526,6 +526,8 @@ document.addEventListener('DOMContentLoaded', () => {
           selectedSeats.clear();
           selectedSeatsInput.value = '';
           bookingForm.reset();
+          submitBtn.disabled    = false;
+          submitBtn.textContent = 'Confirm Booking';
           loadSeatMap();
           return;
         }
