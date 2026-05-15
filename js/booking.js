@@ -431,12 +431,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const name         = bookingForm.name.value.trim();
     const email        = bookingForm.email.value.trim();
-    const emailConfirm = (bookingForm.emailConfirm ? bookingForm.emailConfirm.value.trim() : email);
+    const emailConfirmEl = document.getElementById('emailConfirm');
+    const emailConfirm = emailConfirmEl ? emailConfirmEl.value.trim() : '';
     const phone        = bookingForm.phone.value.trim();
     const seats        = selectedSeatsInput.value.trim();
 
     if (!seats) { setBookingStatus('Please select at least one seat.', 'error'); return; }
     if (!name || !email || !phone) { setBookingStatus('Please fill in all details.', 'error'); return; }
+    if (!emailConfirm) { setBookingStatus('❌ Please confirm your email address.', 'error'); return; }
     if (email !== emailConfirm) { setBookingStatus('❌ Emails do not match. Please check and try again.', 'error'); return; }
     if (!/^[^\s@]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/.test(email)) { setBookingStatus('❌ Please enter a valid email address.', 'error'); return; }
     if (!eventIdInput.value) { setBookingStatus('Event not loaded yet. Please wait and try again.', 'error'); return; }
