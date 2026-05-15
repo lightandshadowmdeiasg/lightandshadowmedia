@@ -440,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!name || !email || !phone) { setBookingStatus('Please fill in all details.', 'error'); return; }
     if (!emailConfirm) { setBookingStatus('❌ Please confirm your email address.', 'error'); return; }
     if (email !== emailConfirm) { setBookingStatus('❌ Emails do not match. Please check and try again.', 'error'); return; }
-    if (!/^[^\s@]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/.test(email)) { setBookingStatus('❌ Please enter a valid email address.', 'error'); return; }
+    if (!/^[^\s@]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) { setBookingStatus('❌ Please enter a valid email address.', 'error'); return; }
     if (!eventIdInput.value) { setBookingStatus('Event not loaded yet. Please wait and try again.', 'error'); return; }
 
     submitBtn.disabled    = true;
