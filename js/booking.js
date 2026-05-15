@@ -525,6 +525,8 @@ document.addEventListener('DOMContentLoaded', () => {
           );
           selectedSeats.clear();
           selectedSeatsInput.value = '';
+          selectedSeatsLabel.innerHTML = '<span style="color:#888;">No seats selected</span>';
+          document.getElementById('totalPriceLabel').textContent = '$0';
           bookingForm.reset();
           submitBtn.disabled    = false;
           submitBtn.textContent = 'Confirm Booking';
