@@ -756,20 +756,19 @@ html.no-scroll {
     <!-- Left -->
     <ul class="nav-links nav-left">
       <li><a href="index.html">Home</a></li>
-      
+      <li><a href="live-events.html" class="active">Live Events</a></li>
     </ul>
 
     <!-- Center Logo -->
     <a href="index.html" class="logo">
-      <span class="logo-text">Light <span class="ampersand">and</span> Shadow</span>
+      <span class="logo-text">Light <span class="ampersand">&</span> Shadow</span>
       <span class="logo-tagline">Media</span>
     </a>
 
     <!-- Right -->
     <ul class="nav-links nav-right">
-      <li><a href="live-events.html" class="active">Live Events</a></li>
-      <!-- <li><a href="corporate.html">Corporate</a></li>
-      <li><a href="film.html">Film</a></li> -->
+      <li><a href="corporate.html">Corporate</a></li>
+      <li><a href="film.html">Film</a></li>
     </ul>
 
     <!-- Hamburger -->
@@ -784,8 +783,8 @@ html.no-scroll {
   <div class="nav-mobile">
     <a href="index.html">Home</a>
     <a href="live-events.html" class="active">Live Events</a>
-    <!-- <a href="corporate.html">Corporate</a>
-    <a href="film.html">Film</a> -->
+    <a href="corporate.html">Corporate</a>
+    <a href="film.html">Film</a>
     <a href="#contact">Contact</a>
   </div>
 </nav>
@@ -874,9 +873,14 @@ html.no-scroll {
               <input id="email" name="email" type="email" placeholder="you@example.com" required>
             </div>
             <div class="form-group">
-              <label for="phone">Phone</label>
-              <input id="phone" name="phone" type="tel" placeholder="+65 9123 4567" required>
+              <label for="emailConfirm">Confirm Email</label>
+              <input id="emailConfirm" name="emailConfirm" type="email" placeholder="you@example.com" required>
             </div>
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="tel" placeholder="+65 9123 4567" required>
           </div>
 
           <div class="form-group consent-group">
