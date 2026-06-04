@@ -35,14 +35,12 @@
                 <!-- Right -->
                 <ul class="nav-links nav-right">
                     <li><a href="live-events.html" class="active">Live Events</a></li>
-                    <!-- <li><a href="corporate.html">Corporate</a></li>
-                    <li><a href="film.html">Film</a></li> -->
                 </ul>
             
     
             <!-- Center Logo -->
             <a href="index.html" class="logo">
-                <span class="logo-text">Light <span class="ampersand">and</span> Shadow</span>
+                <span class="logo-text">Light <span class="ampersand">&</span> Shadow</span>
                 <span class="logo-tagline">Media</span>
             </a>
     
@@ -58,8 +56,6 @@
         <div class="nav-mobile">
             <a href="index.html">Home</a>
             <a href="live-events.html">Live Events</a>
-            <!-- <a href="corporate.html">Corporate</a>
-            <a href="film.html">Film</a> -->
             <a href="#contact">Contact</a>
         </div>
     </nav>
@@ -82,13 +78,13 @@
     <section class="section-padding">
         <div class="container">
             <div class="filter-tabs">
-                <button class="filter-tab" data-filter="all">All Events</button>
-                <button class="filter-tab active" data-filter="upcoming">Book Tickets</button>
+                <button class="filter-tab active" data-filter="all">All Events</button>
+                <button class="filter-tab" data-filter="upcoming">Upcoming</button>
                 <button class="filter-tab" data-filter="completed">Completed</button>
             </div>
             
             <!-- Projects Grid - Loaded from JSON -->
-            <div class="projects-grid" data-source="https://lsm-bookings.lightandshadowmdeiasg.workers.dev/events">
+            <div class="projects-grid" data-source="https://api.lightandshadow.media/events">
                 <!-- Projects will be loaded dynamically -->
                 <div class="loading" style="grid-column: 1 / -1;">
                     <div class="loading-spinner"></div>
@@ -175,12 +171,12 @@
             <div class="footer-content">
                 <div class="footer-logo">
                     <img 
-                      src="assets/images/about/lsmlogo2.png" 
+                      src="assets/images/about/lsmlogo.png" 
                       alt="Light and Shadow Media logo"
                       class="footer-logo-img"
                     />
                     <span class="logo-text">
-                      Light <span class="ampersand">AND</span> Shadow
+                      Light <span class="ampersand">&</span> Shadow
                     </span>
                 </div>
                 
@@ -270,9 +266,7 @@
   </div>
   
   
-    
     <!-- JavaScript -->
     <script src="js/main.js"></script>
-    <script src="js/live-events.js"></script>
 </body>
 </html>
