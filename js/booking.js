@@ -1,10 +1,10 @@
 // ===== CONFIG =====
 // 🔁 Replaced Google Apps Script URL with Cloudflare Worker
-const WORKER_URL = 'https://lightandshadow.media/api';
+const WORKER_URL = 'https://api.lightandshadow.media';
 
-const EVENTS_SOURCE  = 'https://lightandshadow.media/api/events';
+const EVENTS_SOURCE  = 'https://api.lightandshadow.media/events';
 const SEATMAP_SOURCE = 'data/seatmap.json'; // fallback
-const SEATMAP_WORKER = 'https://lightandshadow.media/api/seatmap';
+const SEATMAP_WORKER = 'https://api.lightandshadow.media/seatmap';
 
 let seatmap       = {};
 let bookedSeats   = new Set();
@@ -580,5 +580,4 @@ document.addEventListener('DOMContentLoaded', () => {
     legend.innerHTML = html;
   }
 
-  
 });
