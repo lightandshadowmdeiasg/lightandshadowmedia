@@ -1,10 +1,10 @@
 // ===== CONFIG =====
 // 🔁 Replaced Google Apps Script URL with Cloudflare Worker
-const WORKER_URL = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev';
+const WORKER_URL = 'https://lightandshadow.media/api';
 
-const EVENTS_SOURCE  = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev/events';
+const EVENTS_SOURCE  = 'https://lightandshadow.media/api/events';
 const SEATMAP_SOURCE = 'data/seatmap.json'; // fallback
-const SEATMAP_WORKER = 'https://lsm-bookings.lightandshadowmdeiasg.workers.dev/seatmap';
+const SEATMAP_WORKER = 'https://lightandshadow.media/api/seatmap';
 
 let seatmap       = {};
 let bookedSeats   = new Set();
