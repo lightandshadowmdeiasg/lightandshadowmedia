@@ -580,4 +580,5 @@ document.addEventListener('DOMContentLoaded', () => {
     legend.innerHTML = html;
   }
 
+  
 });
