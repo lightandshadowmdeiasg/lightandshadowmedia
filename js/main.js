@@ -195,18 +195,27 @@ const Modal = {
     },
     
     open(data) {
-        // Set video (YouTube embed)
-        if (data.videoUrl) {
-            const videoId = this.extractYouTubeId(data.videoUrl);
-            if (videoId) {
-                this.videoContainer.innerHTML = `
-                    <iframe 
-                        src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowfullscreen>
-                    </iframe>
-                `;
-            }
+        // Set video — supports YouTube and Google Drive links
+        const videoSource = data.videoUrl || data.driveLink || '';
+        const driveId = this.extractDriveId(videoSource);
+        const ytId    = this.extractYouTubeId(videoSource);
+
+        if (driveId) {
+            this.videoContainer.innerHTML = `
+                <iframe
+                    src="https://drive.google.com/file/d/${driveId}/preview"
+                    allow="autoplay; encrypted-media"
+                    allowfullscreen>
+                </iframe>
+            `;
+        } else if (ytId) {
+            this.videoContainer.innerHTML = `
+                <iframe 
+                    src="https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            `;
         } else {
             this.videoContainer.innerHTML = `
                 <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--color-text-muted);">
@@ -260,6 +269,20 @@ const Modal = {
         }, 300);
     },
     
+    extractDriveId(url) {
+        if (!url) return null;
+        // https://drive.google.com/file/d/FILE_ID/view
+        const m1 = url.match(/drive\.google\.com\/file\/d\/([^\/\?]+)/);
+        if (m1) return m1[1];
+        // https://drive.google.com/open?id=FILE_ID
+        const m2 = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+        if (m2) return m2[1];
+        // https://drive.google.com/uc?id=FILE_ID
+        const m3 = url.match(/drive\.google\.com\/uc\?.*id=([^&]+)/);
+        if (m3) return m3[1];
+        return null;
+    },
+
     extractYouTubeId(url) {
         if (!url) return null;
       
@@ -404,7 +427,7 @@ const ProjectLoader = {
             const json = await response.json();
             
             // Handle different JSON structures
-            this.data = json.events || json.projects || json.films || [];
+            this.data = json.events || json.projects || json.films || json.videos || [];
 
             // Sort live events by date — latest first
             if (this.source && (this.source.indexOf('live-events') !== -1 || this.source.indexOf('workers.dev/events') !== -1)) {
@@ -537,7 +560,7 @@ const ProjectLoader = {
                     <p class="elc-desc">${item.description || ''}</p>
                     ${bookingButton}
                 </div>
-                ${item.videoUrl ? `
+                ${(item.videoUrl || item.driveLink) ? `
                     <div class="project-play-btn">
                         <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></polygon></svg>
                     </div>` : ''}
@@ -569,7 +592,7 @@ const ProjectLoader = {
                     <h3>${item.title}</h3>
                     <p>${item.description || ''}</p>
                 </div>
-                ${item.videoUrl ? `
+                ${(item.videoUrl || item.driveLink) ? `
                     <div class="project-play-btn">
                         <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></polygon></svg>
                     </div>
