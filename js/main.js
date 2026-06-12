@@ -13,6 +13,10 @@
     if (document.querySelector('.projects-grid[data-source]')) {
         ProjectLoader.init();
     }
+
+    if (document.querySelector('.video-scroller[data-source]')) {
+        VideoScroller.init();
+    }
 });
 
 /* ============================================
@@ -635,6 +639,91 @@ const ProjectLoader = {
                 <span>No projects found for this filter.</span>
             </div>
         `;
+    }
+};
+
+/* ============================================
+   VIDEO SCROLLER MODULE
+   Horizontal scrolling video gallery — embeds play inline
+   ============================================ */
+const VideoScroller = {
+    container: null,
+    source: null,
+
+    async init() {
+        this.container = document.querySelector('.video-scroller[data-source]');
+        if (!this.container) return;
+        this.source = this.container.dataset.source;
+        await this.load();
+    },
+
+    extractDriveId(url) {
+        if (!url) return null;
+        const m1 = url.match(/drive\.google\.com\/file\/d\/([^\/\?]+)/);
+        if (m1) return m1[1];
+        const m2 = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+        if (m2) return m2[1];
+        const m3 = url.match(/drive\.google\.com\/uc\?.*id=([^&]+)/);
+        if (m3) return m3[1];
+        return null;
+    },
+
+    extractYouTubeId(url) {
+        if (!url) return null;
+        try {
+            const p = new URL(url);
+            if (p.hostname === 'youtu.be') return p.pathname.slice(1);
+            if (p.searchParams.has('v')) return p.searchParams.get('v');
+            if (p.pathname.includes('/shorts/')) return p.pathname.split('/shorts/')[1].split(/[?&]/)[0];
+        } catch (e) {
+            const m = url.match(/(?:youtube\.com\/(?:shorts\/|watch\?v=)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+            return m ? m[1] : null;
+        }
+        return null;
+    },
+
+    embedSrc(video) {
+        const src = video.driveLink || video.videoUrl || '';
+        const driveId = this.extractDriveId(src);
+        if (driveId) return `https://drive.google.com/file/d/${driveId}/preview`;
+        const ytId = this.extractYouTubeId(src);
+        if (ytId) return `https://www.youtube.com/embed/${ytId}?rel=0`;
+        return null;
+    },
+
+    async load() {
+        try {
+            const res = await fetch(this.source);
+            if (!res.ok) throw new Error('Failed to load videos');
+            const json = await res.json();
+            const videos = json.videos || [];
+            this.render(videos);
+        } catch (e) {
+            console.error('VideoScroller load error:', e);
+            this.container.innerHTML = `<div class="loading"><span>Unable to load videos. Please try again later.</span></div>`;
+        }
+    },
+
+    render(videos) {
+        if (!videos.length) {
+            this.container.innerHTML = `<div class="loading"><span>No videos yet. Check back soon.</span></div>`;
+            return;
+        }
+
+        this.container.innerHTML = videos.map(v => {
+            const src  = this.embedSrc(v);
+            const meta = [v.client, v.year].filter(Boolean).join(' • ');
+            const frame = src
+                ? `<div class="video-card__frame"><iframe src="${src}" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe></div>`
+                : `<div class="video-card__frame"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);">Video coming soon</div></div>`;
+            return `
+                <div class="video-card">
+                    <h3 class="video-card__title">${v.title || 'Untitled'}</h3>
+                    ${frame}
+                    ${meta ? `<div class="video-card__meta">${meta}</div>` : ''}
+                    ${v.description ? `<p class="video-card__desc">${v.description}</p>` : ''}
+                </div>`;
+        }).join('');
     }
 };
 
