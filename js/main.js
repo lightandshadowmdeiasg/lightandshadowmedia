@@ -17,6 +17,10 @@
     if (document.querySelector('.video-scroller[data-source]')) {
         VideoScroller.init();
     }
+
+    if (document.querySelector('.editorial-videos[data-source]')) {
+        EditorialVideos.init();
+    }
 });
 
 /* ============================================
@@ -724,6 +728,143 @@ const VideoScroller = {
                     ${v.description ? `<p class="video-card__desc">${v.description}</p>` : ''}
                 </div>`;
         }).join('');
+    }
+};
+
+/* ============================================
+   EDITORIAL VIDEOS MODULE
+   Full-width alternating rows, click to play fullscreen
+   ============================================ */
+const EditorialVideos = {
+    container: null,
+    source: null,
+    overlay: null,
+
+    async init() {
+        this.container = document.querySelector('.editorial-videos[data-source]');
+        if (!this.container) return;
+        this.source = this.container.dataset.source;
+        this.buildOverlay();
+        await this.load();
+    },
+
+    extractDriveId(url) {
+        if (!url) return null;
+        const m1 = url.match(/drive\.google\.com\/file\/d\/([^\/\?]+)/);
+        if (m1) return m1[1];
+        const m2 = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+        if (m2) return m2[1];
+        const m3 = url.match(/drive\.google\.com\/uc\?.*id=([^&]+)/);
+        if (m3) return m3[1];
+        return null;
+    },
+
+    extractYouTubeId(url) {
+        if (!url) return null;
+        try {
+            const p = new URL(url);
+            if (p.hostname === 'youtu.be') return p.pathname.slice(1);
+            if (p.searchParams.has('v')) return p.searchParams.get('v');
+            if (p.pathname.includes('/shorts/')) return p.pathname.split('/shorts/')[1].split(/[?&]/)[0];
+        } catch (e) {
+            const m = url.match(/(?:youtube\.com\/(?:shorts\/|watch\?v=)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+            return m ? m[1] : null;
+        }
+        return null;
+    },
+
+    embedSrc(video) {
+        const src = video.driveLink || video.videoUrl || '';
+        const driveId = this.extractDriveId(src);
+        if (driveId) return `https://drive.google.com/file/d/${driveId}/preview`;
+        const ytId = this.extractYouTubeId(src);
+        if (ytId) return `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`;
+        return null;
+    },
+
+    buildOverlay() {
+        const ov = document.createElement('div');
+        ov.className = 'ev-overlay';
+        ov.innerHTML = `
+            <button class="ev-overlay__close" aria-label="Close video">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <div class="ev-overlay__frame"></div>`;
+        document.body.appendChild(ov);
+        this.overlay = ov;
+
+        const close = () => this.closeVideo();
+        ov.querySelector('.ev-overlay__close').addEventListener('click', close);
+        ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    },
+
+    openVideo(video) {
+        const src = this.embedSrc(video);
+        const frame = this.overlay.querySelector('.ev-overlay__frame');
+        if (!src) {
+            frame.innerHTML = `<div style="color:rgba(255,255,255,0.5);font-size:1rem;">Video coming soon</div>`;
+        } else {
+            frame.innerHTML = `<iframe src="${src}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
+        }
+        this.overlay.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+    },
+
+    closeVideo() {
+        if (!this.overlay) return;
+        this.overlay.classList.remove('is-open');
+        this.overlay.querySelector('.ev-overlay__frame').innerHTML = '';
+        document.body.style.overflow = '';
+    },
+
+    async load() {
+        try {
+            const res = await fetch(this.source);
+            if (!res.ok) throw new Error('Failed to load videos');
+            const json = await res.json();
+            this.render(json.videos || []);
+        } catch (e) {
+            console.error('EditorialVideos load error:', e);
+            this.container.innerHTML = `<div class="loading"><span>Unable to load videos. Please try again later.</span></div>`;
+        }
+    },
+
+    render(videos) {
+        if (!videos.length) {
+            this.container.innerHTML = `<div class="loading"><span>No videos yet. Check back soon.</span></div>`;
+            return;
+        }
+
+        this.container.innerHTML = videos.map((v, i) => {
+            const num   = String(i + 1).padStart(2, '0');
+            const meta  = [v.client, v.year].filter(Boolean).join(' · ');
+            const thumb = resolveThumbUrl(v.thumbnail);
+            const thumbStyle = thumb
+                ? `background-image:url('${thumb}');background-size:cover;background-position:center;`
+                : '';
+            return `
+                <article class="ev-row" data-index="${i}">
+                    <div class="ev-row__media" style="${thumbStyle}">
+                        <div class="ev-row__play">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg>
+                        </div>
+                        <span class="ev-row__num">${num}</span>
+                    </div>
+                    <div class="ev-row__body">
+                        ${meta ? `<div class="ev-row__meta">${meta}</div>` : ''}
+                        <h3 class="ev-row__title">${v.title || 'Untitled'}</h3>
+                        ${v.description ? `<p class="ev-row__desc">${v.description}</p>` : ''}
+                        <span class="ev-row__cta">Watch film <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;vertical-align:-2px;"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                    </div>
+                </article>`;
+        }).join('');
+
+        this.container.querySelectorAll('.ev-row').forEach((row, i) => {
+            row.addEventListener('click', () => this.openVideo(videos[i]));
+        });
     }
 };
 

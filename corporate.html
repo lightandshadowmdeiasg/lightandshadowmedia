@@ -12,6 +12,7 @@
     
     <!-- Stylesheets -->
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/editorial-videos.css">
     
     <!-- Preconnect to Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -78,19 +79,11 @@
     <!-- Filter Tabs -->
     <section class="section-padding">
         <div class="container">
-            <div class="filter-tabs">
-                <button class="filter-tab active" data-filter="all">All Projects</button>
-                <button class="filter-tab" data-filter="brand">Brand Films</button>
-                <button class="filter-tab" data-filter="product">Product</button>
-                <button class="filter-tab" data-filter="internal">Internal</button>
-            </div>
-            
-            <!-- Projects Grid - Loaded from JSON -->
-            <div class="projects-grid" data-source="https://api.lightandshadow.media/videos?page=corporate">
-                <!-- Projects will be loaded dynamically -->
-                <div class="loading" style="grid-column: 1 / -1;">
+            <!-- Editorial Videos - Loaded from Worker -->
+            <div class="editorial-videos" data-source="https://api.lightandshadow.media/videos?page=corporate">
+                <div class="loading">
                     <div class="loading-spinner"></div>
-                    <span>Loading projects...</span>
+                    <span>Loading videos...</span>
                 </div>
             </div>
         </div>
