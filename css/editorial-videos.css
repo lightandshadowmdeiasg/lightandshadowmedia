@@ -388,17 +388,17 @@
    COMPACT PAGE HEADER — for video pages (corporate/film/live)
    Reduces the large banner area above the hero video
    ============================================================ */
-.page-header {
-  padding-top: calc(70px + var(--space-md));
-  padding-bottom: var(--space-md);
+body .page-header {
+  padding-top: calc(70px + var(--space-sm)) !important;
+  padding-bottom: var(--space-sm) !important;
 }
 
-.page-header h1 {
-  font-size: clamp(2rem, 4.5vw, 3.2rem);
+body .page-header h1 {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
 }
 
-.page-header p {
-  font-size: 0.98rem;
+body .page-header p {
+  font-size: 0.95rem;
 }
 
 /* Tighten the section padding around the hero video */
@@ -415,11 +415,11 @@ section.hero-section {
 }
 
 @media (max-width: 768px) {
-  .page-header {
-    padding-top: calc(70px + var(--space-sm));
-    padding-bottom: var(--space-sm);
+  body .page-header {
+    padding-top: calc(65px + var(--space-xs)) !important;
+    padding-bottom: var(--space-xs) !important;
   }
-  .page-header h1 {
-    font-size: clamp(1.7rem, 7vw, 2.4rem);
+  body .page-header h1 {
+    font-size: clamp(1.6rem, 7vw, 2.2rem);
   }
 }
