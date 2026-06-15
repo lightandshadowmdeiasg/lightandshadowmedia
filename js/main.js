@@ -21,6 +21,10 @@
     if (document.querySelector('.editorial-videos[data-source]')) {
         EditorialVideos.init();
     }
+
+    if (document.querySelector('.hero-video[data-source]')) {
+        HeroVideo.init();
+    }
 });
 
 /* ============================================
@@ -876,6 +880,134 @@ const EditorialVideos = {
         this.container.querySelectorAll('.ev-row').forEach((row, i) => {
             row.addEventListener('click', () => this.openVideo(videos[i]));
         });
+    }
+};
+
+/* ============================================
+   HERO VIDEO MODULE
+   Single large highlight thumbnail, click to play fullscreen
+   ============================================ */
+const HeroVideo = {
+    container: null,
+    source: null,
+    overlay: null,
+
+    async init() {
+        this.container = document.querySelector('.hero-video[data-source]');
+        if (!this.container) return;
+        this.source = this.container.dataset.source;
+        this.buildOverlay();
+        await this.load();
+    },
+
+    extractDriveId(url) {
+        if (!url) return null;
+        const m1 = url.match(/drive\.google\.com\/file\/d\/([^\/\?]+)/);
+        if (m1) return m1[1];
+        const m2 = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+        if (m2) return m2[1];
+        const m3 = url.match(/drive\.google\.com\/uc\?.*id=([^&]+)/);
+        if (m3) return m3[1];
+        return null;
+    },
+
+    extractYouTubeId(url) {
+        if (!url) return null;
+        try {
+            const p = new URL(url);
+            if (p.hostname === 'youtu.be') return p.pathname.slice(1);
+            if (p.searchParams.has('v')) return p.searchParams.get('v');
+            if (p.pathname.includes('/shorts/')) return p.pathname.split('/shorts/')[1].split(/[?&]/)[0];
+        } catch (e) {
+            const m = url.match(/(?:youtube\.com\/(?:shorts\/|watch\?v=)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+            return m ? m[1] : null;
+        }
+        return null;
+    },
+
+    embedSrc(video) {
+        const src = video.driveLink || video.videoUrl || '';
+        const driveId = this.extractDriveId(src);
+        if (driveId) return `https://drive.google.com/file/d/${driveId}/preview`;
+        const ytId = this.extractYouTubeId(src);
+        if (ytId) return `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`;
+        return null;
+    },
+
+    autoThumb(video) {
+        if (video.thumbnail) return resolveThumbUrl(video.thumbnail);
+        const src = video.driveLink || video.videoUrl || '';
+        const ytId = this.extractYouTubeId(src);
+        if (ytId) return `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
+        const driveId = this.extractDriveId(src);
+        if (driveId) return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1600`;
+        return '';
+    },
+
+    buildOverlay() {
+        const ov = document.createElement('div');
+        ov.className = 'ev-overlay';
+        ov.innerHTML = `
+            <button class="ev-overlay__close" aria-label="Close video">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <div class="ev-overlay__frame"></div>`;
+        document.body.appendChild(ov);
+        this.overlay = ov;
+        const close = () => this.closeVideo();
+        ov.querySelector('.ev-overlay__close').addEventListener('click', close);
+        ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    },
+
+    openVideo(video) {
+        const src = this.embedSrc(video);
+        const frame = this.overlay.querySelector('.ev-overlay__frame');
+        frame.innerHTML = src
+            ? `<iframe src="${src}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`
+            : `<div style="color:rgba(255,255,255,0.5);font-size:1rem;">Video coming soon</div>`;
+        this.overlay.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+    },
+
+    closeVideo() {
+        if (!this.overlay) return;
+        this.overlay.classList.remove('is-open');
+        this.overlay.querySelector('.ev-overlay__frame').innerHTML = '';
+        document.body.style.overflow = '';
+    },
+
+    async load() {
+        try {
+            const res = await fetch(this.source);
+            if (!res.ok) throw new Error('Failed to load highlight');
+            const json = await res.json();
+            const video = (json.videos || [])[0];
+            if (!video) { this.container.style.display = 'none'; return; }
+            this.render(video);
+        } catch (e) {
+            console.error('HeroVideo load error:', e);
+            this.container.style.display = 'none';
+        }
+    },
+
+    render(video) {
+        const thumb = this.autoThumb(video);
+        const thumbImg = thumb
+            ? `<img src="${thumb}" alt="${video.title || ''}" class="hero-video__img" onerror="this.style.display='none'">`
+            : '';
+        this.container.innerHTML = `
+            <div class="hero-video__frame">
+                ${thumbImg}
+                <div class="hero-video__overlay"></div>
+                <div class="hero-video__play">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg>
+                </div>
+                ${video.title ? `<div class="hero-video__caption">${video.title}</div>` : ''}
+            </div>`;
+        this.container.querySelector('.hero-video__frame').addEventListener('click', () => this.openVideo(video));
     }
 };
 
