@@ -316,7 +316,8 @@
   pointer-events: none;
 }
 
-.hero-video__bg iframe {
+.hero-video__bg iframe,
+.hero-video__bg > div {
   position: absolute;
   top: 50%;
   left: 50%;

@@ -1000,11 +1000,11 @@ const HeroVideo = {
 
         // YouTube → autoplay muted looping background preview
         if (ytId) {
-            const bgSrc = `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&disablekb=1`;
+            const playerId = 'heroYT_' + Math.random().toString(36).slice(2, 8);
             this.container.innerHTML = `
                 <div class="hero-video__frame hero-video__frame--playing">
                     <div class="hero-video__bg">
-                        <iframe src="${bgSrc}" allow="autoplay; encrypted-media" frameborder="0" tabindex="-1"></iframe>
+                        <div id="${playerId}"></div>
                     </div>
                     <div class="hero-video__overlay"></div>
                     <div class="hero-video__play">
@@ -1013,6 +1013,7 @@ const HeroVideo = {
                     ${video.title ? `<div class="hero-video__caption">${video.title}</div>` : ''}
                     <div class="hero-video__hint">Click to watch full video</div>
                 </div>`;
+            this.initYouTubeBg(playerId, ytId);
         } else {
             // Drive or other → static thumbnail
             const thumbImg = thumb
@@ -1029,6 +1030,37 @@ const HeroVideo = {
                 </div>`;
         }
         this.container.querySelector('.hero-video__frame').addEventListener('click', () => this.openVideo(video));
+    },
+
+    initYouTubeBg(playerId, ytId) {
+        const create = () => {
+            new YT.Player(playerId, {
+                videoId: ytId,
+                playerVars: {
+                    autoplay: 1, mute: 1, loop: 1, playlist: ytId,
+                    controls: 0, showinfo: 0, rel: 0, modestbranding: 1,
+                    playsinline: 1, disablekb: 1, fs: 0, iv_load_policy: 3
+                },
+                events: {
+                    onReady: (e) => { e.target.mute(); e.target.playVideo(); },
+                    onStateChange: (e) => { if (e.data === YT.PlayerState.ENDED) e.target.playVideo(); }
+                }
+            });
+        };
+
+        if (window.YT && window.YT.Player) {
+            create();
+        } else {
+            // Load the API once, then create
+            if (!document.getElementById('yt-iframe-api')) {
+                const tag = document.createElement('script');
+                tag.id = 'yt-iframe-api';
+                tag.src = 'https://www.youtube.com/iframe_api';
+                document.head.appendChild(tag);
+            }
+            const prev = window.onYouTubeIframeAPIReady;
+            window.onYouTubeIframeAPIReady = () => { if (typeof prev === 'function') prev(); create(); };
+        }
     }
 };
 
