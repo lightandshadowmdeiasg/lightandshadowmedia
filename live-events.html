@@ -8,7 +8,7 @@
     <title>Live Events | Light and Shadow Media</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="assets/images/logos/favicon.svg">
+    <link rel="icon" type="image/png" href="assets/images/about/lsmlogo.png">
     
     <!-- Stylesheets -->
     <link rel="stylesheet" href="css/styles.css">
@@ -34,7 +34,6 @@
     
                 <!-- Right -->
                 <ul class="nav-links nav-right">
-                    
                     <li><a href="corporate.html">Corporate</a></li>
                     <li><a href="film.html">Film</a></li>
                 </ul>
@@ -42,8 +41,7 @@
     
             <!-- Center Logo -->
             <a href="index.html" class="logo">
-                <span class="logo-text">Light <span class="ampersand">and</span> Shadow</span>
-                <span class="logo-tagline">Media</span>
+                <span class="logo-text">Light <span class="ampersand">and</span> Shadow Media</span>
             </a>
     
             <!-- Hamburger -->
@@ -82,14 +80,13 @@
     <section class="section-padding">
         <div class="container">
             <div class="filter-tabs">
-                <button class="filter-tab" data-filter="all">All Events</button>
-                <button class="filter-tab active" data-filter="upcoming">Book Tickets</button>
+                <button class="filter-tab active" data-filter="all">All Events</button>
+                <button class="filter-tab" data-filter="upcoming">Upcoming</button>
                 <button class="filter-tab" data-filter="completed">Completed</button>
             </div>
             
             <!-- Projects Grid - Loaded from JSON -->
-            <div class="projects-grid" data-source="https://lsm-bookings.lightandshadowmdeiasg.workers.dev/events">
-            
+            <div class="projects-grid" data-source="https://api.lightandshadow.media/events">
                 <!-- Projects will be loaded dynamically -->
                 <div class="loading" style="grid-column: 1 / -1;">
                     <div class="loading-spinner"></div>
@@ -188,8 +185,8 @@
                 <ul class="footer-links">
                     <li><a href="index.html">Home</a></li>
                     <li><a href="live-events.html">Live Events</a></li>
-                    <li><a href="corporate.html">Corporate</a></li>
-                    <li><a href="film.html">Film</a></li>
+                    <!-- <li><a href="corporate.html">Corporate</a></li>
+                    <li><a href="film.html">Film</a></li> -->
                     <li><a href="index.html#contact">Contact</a></li>
                 </ul>
             </div>
@@ -271,9 +268,8 @@
   </div>
   
   
-
+    
     <!-- JavaScript -->
     <script src="js/main.js"></script>
-    <!-- <script src="js/live-events.js"></script> -->
 </body>
 </html>
