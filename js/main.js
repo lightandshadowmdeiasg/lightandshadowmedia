@@ -994,19 +994,40 @@ const HeroVideo = {
     },
 
     render(video) {
+        const src = video.driveLink || video.videoUrl || '';
+        const ytId = this.extractYouTubeId(src);
         const thumb = this.autoThumb(video);
-        const thumbImg = thumb
-            ? `<img src="${thumb}" alt="${video.title || ''}" class="hero-video__img" onerror="this.style.display='none'">`
-            : '';
-        this.container.innerHTML = `
-            <div class="hero-video__frame">
-                ${thumbImg}
-                <div class="hero-video__overlay"></div>
-                <div class="hero-video__play">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg>
-                </div>
-                ${video.title ? `<div class="hero-video__caption">${video.title}</div>` : ''}
-            </div>`;
+
+        // YouTube → autoplay muted looping background preview
+        if (ytId) {
+            const bgSrc = `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&disablekb=1`;
+            this.container.innerHTML = `
+                <div class="hero-video__frame hero-video__frame--playing">
+                    <div class="hero-video__bg">
+                        <iframe src="${bgSrc}" allow="autoplay; encrypted-media" frameborder="0" tabindex="-1"></iframe>
+                    </div>
+                    <div class="hero-video__overlay"></div>
+                    <div class="hero-video__play">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg>
+                    </div>
+                    ${video.title ? `<div class="hero-video__caption">${video.title}</div>` : ''}
+                    <div class="hero-video__hint">Click to watch full video</div>
+                </div>`;
+        } else {
+            // Drive or other → static thumbnail
+            const thumbImg = thumb
+                ? `<img src="${thumb}" alt="${video.title || ''}" class="hero-video__img" onerror="this.style.display='none'">`
+                : '';
+            this.container.innerHTML = `
+                <div class="hero-video__frame">
+                    ${thumbImg}
+                    <div class="hero-video__overlay"></div>
+                    <div class="hero-video__play">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg>
+                    </div>
+                    ${video.title ? `<div class="hero-video__caption">${video.title}</div>` : ''}
+                </div>`;
+        }
         this.container.querySelector('.hero-video__frame').addEventListener('click', () => this.openVideo(video));
     }
 };
