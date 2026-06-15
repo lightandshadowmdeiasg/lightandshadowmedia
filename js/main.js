@@ -852,12 +852,13 @@ const EditorialVideos = {
             const num   = String(i + 1).padStart(2, '0');
             const meta  = [v.client, v.year].filter(Boolean).join(' · ');
             const thumb = this.autoThumb(v);
-            const thumbStyle = thumb
-                ? `background-image:url('${thumb}');background-size:cover;background-position:center;`
+            const thumbImg = thumb
+                ? `<img src="${thumb}" alt="${v.title || ''}" loading="lazy" class="ev-row__img" onerror="this.style.display='none'">`
                 : '';
             return `
                 <article class="ev-row" data-index="${i}">
-                    <div class="ev-row__media" style="${thumbStyle}">
+                    <div class="ev-row__media">
+                        ${thumbImg}
                         <div class="ev-row__play">
                             <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg>
                         </div>

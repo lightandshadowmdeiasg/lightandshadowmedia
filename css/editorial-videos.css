@@ -61,6 +61,16 @@
   align-items: center;
   justify-content: center;
   transition: transform 0.3s ease, background-color 0.3s ease;
+  z-index: 2;
+}
+
+.ev-row__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
 }
 
 .ev-row__play svg {
@@ -79,6 +89,7 @@
   position: absolute;
   top: 16px;
   left: 16px;
+  z-index: 2;
   font-family: Arial, sans-serif;
   font-size: 0.7rem;
   letter-spacing: 0.2em;
