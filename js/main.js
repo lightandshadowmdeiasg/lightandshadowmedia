@@ -782,6 +782,16 @@ const EditorialVideos = {
         return null;
     },
 
+    autoThumb(video) {
+        if (video.thumbnail) return resolveThumbUrl(video.thumbnail);
+        const src = video.driveLink || video.videoUrl || '';
+        const ytId = this.extractYouTubeId(src);
+        if (ytId) return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+        const driveId = this.extractDriveId(src);
+        if (driveId) return `https://drive.google.com/thumbnail?id=${driveId}&sz=w800`;
+        return '';
+    },
+
     buildOverlay() {
         const ov = document.createElement('div');
         ov.className = 'ev-overlay';
@@ -841,7 +851,7 @@ const EditorialVideos = {
         this.container.innerHTML = videos.map((v, i) => {
             const num   = String(i + 1).padStart(2, '0');
             const meta  = [v.client, v.year].filter(Boolean).join(' · ');
-            const thumb = resolveThumbUrl(v.thumbnail);
+            const thumb = this.autoThumb(v);
             const thumbStyle = thumb
                 ? `background-image:url('${thumb}');background-size:cover;background-position:center;`
                 : '';
