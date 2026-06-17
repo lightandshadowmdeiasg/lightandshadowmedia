@@ -532,7 +532,8 @@ const ProjectLoader = {
         // Show booking button only on the Live Events page
         const isLiveEvents = this.source && (
             this.source.indexOf('live-events') !== -1 ||
-            this.source.indexOf('workers.dev/events') !== -1
+            this.source.indexOf('workers.dev/events') !== -1 ||
+            this.source.indexOf('/events') !== -1
         );
         const isBookable = isLiveEvents && (item.bookingStatus === 'open' || item.status === 'upcoming');
 
