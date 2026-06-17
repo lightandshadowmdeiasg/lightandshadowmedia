@@ -10,6 +10,62 @@ let seatmap       = {};
 let bookedSeats   = new Set();
 let selectedSeats = new Set();
 
+// Wires up the "Download QR" button — saves the rendered QR canvas/img as a PNG.
+function setupQRDownload(buttonId, qrContainerId, filename) {
+  const btn = document.getElementById(buttonId);
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const container = document.getElementById(qrContainerId);
+    if (!container) return;
+    const canvas = container.querySelector('canvas');
+    const img    = container.querySelector('img');
+    let dataUrl = '';
+    try {
+      if (canvas) {
+        dataUrl = canvas.toDataURL('image/png');
+      } else if (img) {
+        dataUrl = img.src;
+      }
+    } catch (e) {
+      if (img) { window.open(img.src, '_blank'); return; }
+    }
+    if (!dataUrl) return;
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `PayNow-${(filename || 'QR')}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    btn.innerHTML = '✓ Download ပြီးပါပြီ';
+    setTimeout(() => {
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> QR ပုံ Download လုပ်ရန်';
+    }, 2500);
+  });
+}
+
+// Live countdown showing time left to pay. Updates every second.
+function startPaymentCountdown(containerId, expiryTime) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  let timer;
+  const tick = () => {
+    const remaining = expiryTime - Date.now();
+    if (remaining <= 0) {
+      el.innerHTML = '⏱️ ဤ Booking သက်တမ်းကုန်သွားပါပြီ။ ပြန်လည် Booking ပြုလုပ်ပါ။';
+      el.style.color = '#e05656';
+      el.style.background = 'rgba(224,86,86,0.1)';
+      clearInterval(timer);
+      return;
+    }
+    const h = Math.floor(remaining / 3600000);
+    const m = Math.floor((remaining % 3600000) / 60000);
+    const s = Math.floor((remaining % 60000) / 1000);
+    el.innerHTML = `⏱️ Payment ပြုလုပ်ရန် ကျန်ချိန်: <b>${h}နာရီ ${String(m).padStart(2,'0')}မိနစ် ${String(s).padStart(2,'0')}စက္ကန့်</b>`;
+  };
+  tick();
+  timer = setInterval(tick, 1000);
+}
+
 // Renders a PayNow QR string into the given container element using QRCode lib.
 // Falls back to a Google Charts QR image if the library isn't loaded.
 function renderPayNowQR(containerId, qrString) {
@@ -531,22 +587,34 @@ document.addEventListener('DOMContentLoaded', () => {
           const seatRef = data.paynowRef || seatDetails.map(s => s.seat).join('').replace(/[^A-Za-z0-9]/g, '');
           const refId   = 'paynow-ref-' + Date.now();
           const qrId    = 'paynow-qr-' + Date.now();
+          const dlId    = 'paynow-dl-' + Date.now();
+          const cdId    = 'paynow-cd-' + Date.now();
           const payAmount = data.amount || totalPrice.toFixed(2);
           const qrString  = data.paynowQR || '';
+          // Payment window: 24 hours from now
+          const expiryTime = Date.now() + 24 * 60 * 60 * 1000;
 
           setBookingStatus(
             `<div style="margin-bottom:10px;"><b>ဤစာကိုပြီးဆုံးအောင်အရင်ဖတ်ပေးပါ။ </b><br>` +
             `Booking လက်ခံရှိပါသည်။ Email စစ်ဆေးပါ။<br>` +
-            `<div style="text-align:center;margin-bottom:16px;">` +
+            `<div style="text-align:center;margin-bottom:12px;">` +
             `<div style="display:inline-block;position:relative;">` +
             `<div id="${qrId}" style="width:220px;height:220px;margin:0 auto;background:#fff;border-radius:8px;padding:10px;display:flex;align-items:center;justify-content:center;"></div>` +
             `<div style="margin-top:8px;font-size:0.72rem;color:#c9a227;letter-spacing:0.04em;text-align:center;">&#128247; iPhone: QR ပုံကို ဖိထားပြီး <b>Add to Photos</b> နှိပ်ပါ</div>` +
             `<div style="font-size:0.72rem;color:#aaa;text-align:center;">Android: QR ပုံကို ဖိထားပြီး Save Image နှိပ်ပါ</div>` +
             `</div>` +
             `</div>` +
+            // Download QR button
+            `<div style="text-align:center;margin-bottom:14px;">` +
+            `<button id="${dlId}" style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:#1a1a1f;color:#c9a227;border:1px solid #c9a227;border-radius:7px;font-size:0.82rem;font-weight:600;cursor:pointer;">` +
+            `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>` +
+            `QR ပုံ Download လုပ်ရန်</button>` +
+            `</div>` +
+            // Countdown timer
+            `<div id="${cdId}" style="text-align:center;margin-bottom:14px;font-size:0.82rem;color:#c9a227;background:rgba(201,162,39,0.08);border-radius:6px;padding:8px;"></div>` +
             `<div style="margin-bottom:10px;"><b>အပေါ်က Paynow QR ကို Scan ၍ Payment ပြုလုပ်ပေးပါ</b><br>` +
             `<b>Amount: SGD $${payAmount}</b> <span style="font-size:0.78rem;color:#1a7a3a;">(✓ ပမာဏ Lock ထားပြီးပါပြီ)</span></div>` +
-            `<div style="font-size:0.82rem;margin-bottom:6px;"><b>အောက်ပါခုံနံပါတ်(များ)ကို Copy လုပ်ပြီး Payment Refrence တွင် ထည့်ပေးပါ။</b></div>` +
+            `<div style="font-size:0.82rem;margin-bottom:6px;"><b>အောက်ပါ Reference ကို Copy လုပ်ပြီး Payment Refrence တွင် ထည့်ပေးပါ။</b></div>` +
             `<div style="display:flex;align-items:center;gap:8px;background:#f0f0f0;border-radius:6px;padding:8px 12px;margin-bottom:12px;">` +
             `<span style="flex:1;font-family:monospace;font-size:0.85rem;color:#111;word-break:break-all;" id="${refId}">${seatRef}</span>` +
             `<button onclick="(function(){navigator.clipboard.writeText('${seatRef}').then(function(){var b=document.getElementById('copy-btn-${refId}');b.textContent='Copied!';b.style.color='#1a7a3a';setTimeout(function(){b.textContent='Copy';b.style.color='';},2000);})})()" ` +
@@ -560,6 +628,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
           // Render the dynamic PayNow QR from the string
           renderPayNowQR(qrId, qrString);
+
+          // Wire up download button
+          setupQRDownload(dlId, qrId, seatRef);
+
+          // Start countdown timer
+          startPaymentCountdown(cdId, expiryTime);
 
           selectedSeats.clear();
           selectedSeatsInput.value = '';
