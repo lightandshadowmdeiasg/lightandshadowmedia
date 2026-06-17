@@ -528,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (data.success && data.paynow) {
           const ref     = data.bookingRef || '';
-          const seatRef = seatDetails.map(s => s.seat).join(', ');
+          const seatRef = data.paynowRef || seatDetails.map(s => s.seat).join('').replace(/[^A-Za-z0-9]/g, '');
           const refId   = 'paynow-ref-' + Date.now();
           const qrId    = 'paynow-qr-' + Date.now();
           const payAmount = data.amount || totalPrice.toFixed(2);
