@@ -10,6 +10,36 @@ let seatmap       = {};
 let bookedSeats   = new Set();
 let selectedSeats = new Set();
 
+// Renders a PayNow QR string into the given container element using QRCode lib.
+// Falls back to a Google Charts QR image if the library isn't loaded.
+function renderPayNowQR(containerId, qrString) {
+  const el = document.getElementById(containerId);
+  if (!el || !qrString) return;
+  el.innerHTML = '';
+  try {
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(el, {
+        text: qrString,
+        width: 200,
+        height: 200,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    } else {
+      // Fallback — render via image API
+      const img = document.createElement('img');
+      img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrString);
+      img.alt = 'PayNow QR';
+      img.style.width = '200px';
+      img.style.height = '200px';
+      el.appendChild(img);
+    }
+  } catch (e) {
+    console.error('QR render failed:', e);
+  }
+}
+
 function setBookingStatus(message, type = 'info', title = null) {
   const modal   = document.getElementById('statusModal');
   const card    = modal?.querySelector('.status-card');
@@ -500,18 +530,22 @@ document.addEventListener('DOMContentLoaded', () => {
           const ref     = data.bookingRef || '';
           const seatRef = seatDetails.map(s => s.seat).join(', ');
           const refId   = 'paynow-ref-' + Date.now();
+          const qrId    = 'paynow-qr-' + Date.now();
+          const payAmount = data.amount || totalPrice.toFixed(2);
+          const qrString  = data.paynowQR || '';
+
           setBookingStatus(
             `<div style="margin-bottom:10px;"><b>ဤစာကိုပြီးဆုံးအောင်အရင်ဖတ်ပေးပါ။ </b><br>` +
             `Booking လက်ခံရှိပါသည်။ Email စစ်ဆေးပါ။<br>` +
             `<div style="text-align:center;margin-bottom:16px;">` +
             `<div style="display:inline-block;position:relative;">` +
-            `<img src="assets/images/paynowqr.png" alt="PayNow QR" style="width:200px;height:200px;display:block;margin:0 auto;border-radius:8px;-webkit-touch-callout:default;">` +
+            `<div id="${qrId}" style="width:220px;height:220px;margin:0 auto;background:#fff;border-radius:8px;padding:10px;display:flex;align-items:center;justify-content:center;"></div>` +
             `<div style="margin-top:8px;font-size:0.72rem;color:#c9a227;letter-spacing:0.04em;text-align:center;">&#128247; iPhone: QR ပုံကို ဖိထားပြီး <b>Add to Photos</b> နှိပ်ပါ</div>` +
             `<div style="font-size:0.72rem;color:#aaa;text-align:center;">Android: QR ပုံကို ဖိထားပြီး Save Image နှိပ်ပါ</div>` +
             `</div>` +
             `</div>` +
             `<div style="margin-bottom:10px;"><b>အပေါ်က Paynow QR ကို Scan ၍ Payment ပြုလုပ်ပေးပါ</b><br>` +
-            `<b>Amount: SGD $${totalPrice.toFixed(2)}</b></div>` +
+            `<b>Amount: SGD $${payAmount}</b> <span style="font-size:0.78rem;color:#1a7a3a;">(✓ ပမာဏ Lock ထားပြီးပါပြီ)</span></div>` +
             `<div style="font-size:0.82rem;margin-bottom:6px;"><b>အောက်ပါခုံနံပါတ်(များ)ကို Copy လုပ်ပြီး Payment Refrence တွင် ထည့်ပေးပါ။</b></div>` +
             `<div style="display:flex;align-items:center;gap:8px;background:#f0f0f0;border-radius:6px;padding:8px 12px;margin-bottom:12px;">` +
             `<span style="flex:1;font-family:monospace;font-size:0.85rem;color:#111;word-break:break-all;" id="${refId}">${seatRef}</span>` +
@@ -523,6 +557,10 @@ document.addEventListener('DOMContentLoaded', () => {
             'success',
             'Pay via PayNow'
           );
+
+          // Render the dynamic PayNow QR from the string
+          renderPayNowQR(qrId, qrString);
+
           selectedSeats.clear();
           selectedSeatsInput.value = '';
           selectedSeatsLabel.innerHTML = '<span style="color:#888;">No seats selected</span>';

@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Book Seats | Light and Shadow Media</title>
 
-  <link rel="icon" type="image/svg+xml" href="assets/images/logos/favicon.svg">
+  <link rel="icon" type="image/png" href="assets/images/about/lsmlogo.png">
+  <link rel="apple-touch-icon" href="assets/images/about/lsmlogo.png">
   <link rel="stylesheet" href="css/styles.css">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -756,17 +757,19 @@ html.no-scroll {
     <!-- Left -->
     <ul class="nav-links nav-left">
       <li><a href="index.html">Home</a></li>
+      <li><a href="live-events.html" class="active">Live Events</a></li>
     </ul>
 
     <!-- Center Logo -->
     <a href="index.html" class="logo">
-      <span class="logo-text">Light <span class="ampersand">And</span> Shadow</span>
+      <span class="logo-text">Light <span class="ampersand">and</span> Shadow</span>
       <span class="logo-tagline">Media</span>
     </a>
 
     <!-- Right -->
     <ul class="nav-links nav-right">
-      <li><a href="live-events.html" class="active">Live Events</a></li>
+      <li><a href="corporate.html">Corporate</a></li>
+      <li><a href="film.html">Film</a></li>
     </ul>
 
     <!-- Hamburger -->
@@ -781,6 +784,8 @@ html.no-scroll {
   <div class="nav-mobile">
     <a href="index.html">Home</a>
     <a href="live-events.html" class="active">Live Events</a>
+    <a href="corporate.html">Corporate</a>
+    <a href="film.html">Film</a>
     <a href="#contact">Contact</a>
   </div>
 </nav>
@@ -811,10 +816,10 @@ html.no-scroll {
         <span class="legend-box legend-unavailable"></span> Unavailable
       </span>
     </div>
-    <!-- <div class="seat-counts" id="seatCounts">
+    <div class="seat-counts" id="seatCounts">
       <span class="seat-count booked">Booked: <b id="bookedCount">0</b> seats</span>
-      <span class="seat-count available">Available: <b id="availableCount">0</b></span> 
-    </div> -->
+      <!-- <span class="seat-count available">Available: <b id="availableCount">0</b></span>  -->
+    </div>
     
     <div class="screen-container">
       
@@ -857,6 +862,8 @@ html.no-scroll {
           <input type="hidden" id="eventVenue" name="eventVenue">
           <input type="hidden" id="eventTitleHidden" name="eventTitle">
           <input type="hidden" id="selectedSeats" name="seats">
+          <!-- Honeypot: hidden from humans, bots fill this in -->
+          <input type="text" name="website" style="display:none;" tabindex="-1" autocomplete="off">
 
           <div class="form-group">
             <label for="name">Name</label>
@@ -931,6 +938,7 @@ html.no-scroll {
 
   
   <script src="js/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
   <script src="js/booking.js"></script>
 </body>
 </html>
