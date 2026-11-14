@@ -1091,7 +1091,7 @@ const HeroVideo = {
 const Gallery = {
     overlay: null,
     photos: [],
-    index: 0,
+    lbIndex: 0,
     apiBase: 'https://api.lightandshadow.media',
 
     ensureOverlay() {
@@ -1099,53 +1099,62 @@ const Gallery = {
         const ov = document.createElement('div');
         ov.className = 'gallery-overlay';
         ov.innerHTML = `
-            <button class="gallery-close" aria-label="Close gallery">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-            <button class="gallery-nav gallery-prev" aria-label="Previous">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <div class="gallery-stage">
-                <div class="gallery-loading"><div class="loading-spinner"></div></div>
-                <img class="gallery-img" alt="" style="display:none;">
+            <div class="gallery-header">
+                <h3 class="gallery-title"></h3>
+                <button class="gallery-close" aria-label="Close gallery">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
             </div>
-            <button class="gallery-nav gallery-next" aria-label="Next">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-            <div class="gallery-counter"></div>`;
+            <div class="gallery-scroll">
+                <div class="gallery-loading"><div class="loading-spinner"></div></div>
+                <div class="gallery-masonry"></div>
+            </div>
+            <div class="gallery-lightbox">
+                <button class="glb-close" aria-label="Close photo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+                <button class="glb-nav glb-prev" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+                <div class="glb-stage"><div class="gallery-loading"><div class="loading-spinner"></div></div><img class="glb-img" alt="" style="display:none;"></div>
+                <button class="glb-nav glb-next" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+                <div class="glb-counter"></div>
+            </div>`;
         document.body.appendChild(ov);
         this.overlay = ov;
 
         ov.querySelector('.gallery-close').addEventListener('click', () => this.close());
-        ov.querySelector('.gallery-prev').addEventListener('click', (e) => { e.stopPropagation(); this.prev(); });
-        ov.querySelector('.gallery-next').addEventListener('click', (e) => { e.stopPropagation(); this.next(); });
-        ov.addEventListener('click', (e) => { if (e.target === ov || e.target.classList.contains('gallery-stage')) this.close(); });
+        ov.querySelector('.glb-close').addEventListener('click', () => this.closeLightbox());
+        ov.querySelector('.glb-prev').addEventListener('click', (e) => { e.stopPropagation(); this.lbShow(this.lbIndex - 1); });
+        ov.querySelector('.glb-next').addEventListener('click', (e) => { e.stopPropagation(); this.lbShow(this.lbIndex + 1); });
+        ov.querySelector('.glb-stage').addEventListener('click', (e) => { if (e.target.classList.contains('glb-stage')) this.closeLightbox(); });
+
         document.addEventListener('keydown', (e) => {
             if (!this.overlay.classList.contains('is-open')) return;
-            if (e.key === 'Escape') this.close();
-            if (e.key === 'ArrowLeft') this.prev();
-            if (e.key === 'ArrowRight') this.next();
+            const lbOpen = this.overlay.querySelector('.gallery-lightbox').classList.contains('is-open');
+            if (e.key === 'Escape') { lbOpen ? this.closeLightbox() : this.close(); }
+            if (lbOpen && e.key === 'ArrowLeft') this.lbShow(this.lbIndex - 1);
+            if (lbOpen && e.key === 'ArrowRight') this.lbShow(this.lbIndex + 1);
         });
 
-        // Swipe (mobile)
+        // Swipe in lightbox
         let startX = 0;
-        const stage = ov.querySelector('.gallery-stage');
+        const stage = ov.querySelector('.glb-stage');
         stage.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
         stage.addEventListener('touchend', (e) => {
             const dx = e.changedTouches[0].clientX - startX;
-            if (Math.abs(dx) > 50) { dx > 0 ? this.prev() : this.next(); }
+            if (Math.abs(dx) > 50) this.lbShow(this.lbIndex + (dx > 0 ? -1 : 1));
         }, { passive: true });
     },
 
     async open(item) {
         this.ensureOverlay();
         this.photos = [];
-        this.index = 0;
         this.overlay.classList.add('is-open');
         document.body.style.overflow = 'hidden';
-        this.overlay.querySelector('.gallery-img').style.display = 'none';
+        this.overlay.querySelector('.gallery-title').textContent =
+            (item.title || '').split('|')[0].trim() + ' — Photos';
+        const masonry = this.overlay.querySelector('.gallery-masonry');
+        masonry.innerHTML = '';
         this.overlay.querySelector('.gallery-loading').style.display = 'flex';
-        this.overlay.querySelector('.gallery-counter').textContent = '';
 
         try {
             const res = await fetch(`${this.apiBase}/gallery?eventId=${encodeURIComponent(item.id)}`);
@@ -1156,41 +1165,52 @@ const Gallery = {
             this.photos = [];
         }
 
-        this.overlay.querySelector('.gallery-loading').style.display = 'none';
+        this.overlay.querySelector('.gallery-scroll').querySelector('.gallery-loading').style.display = 'none';
         if (!this.photos.length) {
-            this.overlay.querySelector('.gallery-counter').textContent = 'No photos yet';
+            masonry.innerHTML = `<div class="gallery-empty">No photos yet. Check back soon.</div>`;
             return;
         }
-        this.show(0);
+
+        masonry.innerHTML = this.photos.map((p, i) => `
+            <figure class="gallery-tile" data-i="${i}">
+                <img src="${p.thumb}" alt="" loading="lazy" onerror="this.closest('.gallery-tile').style.display='none'">
+            </figure>`).join('');
+
+        masonry.querySelectorAll('.gallery-tile').forEach(tile => {
+            tile.addEventListener('click', () => this.openLightbox(parseInt(tile.dataset.i, 10)));
+        });
     },
 
-    show(i) {
+    openLightbox(i) {
+        this.overlay.querySelector('.gallery-lightbox').classList.add('is-open');
+        this.lbShow(i);
+    },
+
+    lbShow(i) {
         if (!this.photos.length) return;
-        this.index = (i + this.photos.length) % this.photos.length;
-        const photo = this.photos[this.index];
-        const img = this.overlay.querySelector('.gallery-img');
+        this.lbIndex = (i + this.photos.length) % this.photos.length;
+        const photo = this.photos[this.lbIndex];
+        const img = this.overlay.querySelector('.glb-img');
+        const load = this.overlay.querySelector('.gallery-lightbox .gallery-loading');
         img.style.display = 'none';
-        this.overlay.querySelector('.gallery-loading').style.display = 'flex';
+        load.style.display = 'flex';
         const loader = new Image();
-        loader.onload = () => {
-            img.src = loader.src;
-            img.style.display = 'block';
-            this.overlay.querySelector('.gallery-loading').style.display = 'none';
-        };
-        loader.onerror = () => {
-            this.overlay.querySelector('.gallery-loading').style.display = 'none';
-        };
+        loader.onload = () => { img.src = loader.src; img.style.display = 'block'; load.style.display = 'none'; };
+        loader.onerror = () => { load.style.display = 'none'; };
         loader.src = photo.full;
-        this.overlay.querySelector('.gallery-counter').textContent = `${this.index + 1} / ${this.photos.length}`;
+        this.overlay.querySelector('.glb-counter').textContent = `${this.lbIndex + 1} / ${this.photos.length}`;
     },
 
-    next() { this.show(this.index + 1); },
-    prev() { this.show(this.index - 1); },
+    closeLightbox() {
+        const lb = this.overlay.querySelector('.gallery-lightbox');
+        lb.classList.remove('is-open');
+        this.overlay.querySelector('.glb-img').src = '';
+    },
 
     close() {
         if (!this.overlay) return;
+        this.closeLightbox();
         this.overlay.classList.remove('is-open');
-        this.overlay.querySelector('.gallery-img').src = '';
         document.body.style.overflow = '';
     }
 };
