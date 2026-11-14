@@ -495,12 +495,23 @@ const ProjectLoader = {
         this.grid.querySelectorAll('.project-card, .event-list-card').forEach((card, index) => {
             const item = filteredData[index];
 
-            // Whole card → open video modal (same as before)
+            // Whole card → gallery if it has photos, else video modal
             card.addEventListener('click', () => {
-                if (typeof Modal !== 'undefined') {
+                if (item.hasGallery && typeof Gallery !== 'undefined') {
+                    Gallery.open(item);
+                } else if (typeof Modal !== 'undefined') {
                     Modal.open(item);
                 }
             });
+
+            // "View Photos" button (if present)
+            const galleryBtn = card.querySelector('.js-open-gallery');
+            if (galleryBtn) {
+                galleryBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (typeof Gallery !== 'undefined') Gallery.open(item);
+                });
+            }
 
             // "Book Seat" button (if present)
             const bookBtn = card.querySelector('.js-open-booking');
@@ -549,6 +560,12 @@ const ProjectLoader = {
                     Book Seat
                 </button>` : '';
 
+            const galleryButton = item.hasGallery ? `
+                <button class="btn btn-outline js-open-gallery" type="button" style="margin-top:auto;align-self:flex-start;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;margin-right:6px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                    View Photos
+                </button>` : '';
+
             return `
             <article class="event-list-card stagger-item" data-index="${index}">
                 <div class="elc-thumb">
@@ -563,6 +580,7 @@ const ProjectLoader = {
                             <path d="M2 15l5-5 4 4 5-5 6 6"/>
                         </svg>
                     </div>
+                    ${item.hasGallery ? `<span class="elc-gallery-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Photos</span>` : ''}
                 </div>
                 <div class="elc-body">
                     <div class="elc-meta">
@@ -572,6 +590,7 @@ const ProjectLoader = {
                     <h3 class="elc-title">${item.title.split('|').map(s => s.trim()).join('<br>')}</h3>
                     <p class="elc-desc">${item.description || ''}</p>
                     ${bookingButton}
+                    ${galleryButton}
                 </div>
                 ${(item.videoUrl || item.driveLink) ? `
                     <div class="project-play-btn">
@@ -1062,6 +1081,117 @@ const HeroVideo = {
             const prev = window.onYouTubeIframeAPIReady;
             window.onYouTubeIframeAPIReady = () => { if (typeof prev === 'function') prev(); create(); };
         }
+    }
+};
+
+/* ============================================
+   GALLERY MODULE
+   Per-event photo lightbox (loads from /gallery?eventId=X)
+   ============================================ */
+const Gallery = {
+    overlay: null,
+    photos: [],
+    index: 0,
+    apiBase: 'https://api.lightandshadow.media',
+
+    ensureOverlay() {
+        if (this.overlay) return;
+        const ov = document.createElement('div');
+        ov.className = 'gallery-overlay';
+        ov.innerHTML = `
+            <button class="gallery-close" aria-label="Close gallery">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <button class="gallery-nav gallery-prev" aria-label="Previous">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div class="gallery-stage">
+                <div class="gallery-loading"><div class="loading-spinner"></div></div>
+                <img class="gallery-img" alt="" style="display:none;">
+            </div>
+            <button class="gallery-nav gallery-next" aria-label="Next">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <div class="gallery-counter"></div>`;
+        document.body.appendChild(ov);
+        this.overlay = ov;
+
+        ov.querySelector('.gallery-close').addEventListener('click', () => this.close());
+        ov.querySelector('.gallery-prev').addEventListener('click', (e) => { e.stopPropagation(); this.prev(); });
+        ov.querySelector('.gallery-next').addEventListener('click', (e) => { e.stopPropagation(); this.next(); });
+        ov.addEventListener('click', (e) => { if (e.target === ov || e.target.classList.contains('gallery-stage')) this.close(); });
+        document.addEventListener('keydown', (e) => {
+            if (!this.overlay.classList.contains('is-open')) return;
+            if (e.key === 'Escape') this.close();
+            if (e.key === 'ArrowLeft') this.prev();
+            if (e.key === 'ArrowRight') this.next();
+        });
+
+        // Swipe (mobile)
+        let startX = 0;
+        const stage = ov.querySelector('.gallery-stage');
+        stage.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
+        stage.addEventListener('touchend', (e) => {
+            const dx = e.changedTouches[0].clientX - startX;
+            if (Math.abs(dx) > 50) { dx > 0 ? this.prev() : this.next(); }
+        }, { passive: true });
+    },
+
+    async open(item) {
+        this.ensureOverlay();
+        this.photos = [];
+        this.index = 0;
+        this.overlay.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+        this.overlay.querySelector('.gallery-img').style.display = 'none';
+        this.overlay.querySelector('.gallery-loading').style.display = 'flex';
+        this.overlay.querySelector('.gallery-counter').textContent = '';
+
+        try {
+            const res = await fetch(`${this.apiBase}/gallery?eventId=${encodeURIComponent(item.id)}`);
+            const json = await res.json();
+            this.photos = json.photos || [];
+        } catch (e) {
+            console.error('Gallery load error:', e);
+            this.photos = [];
+        }
+
+        this.overlay.querySelector('.gallery-loading').style.display = 'none';
+        if (!this.photos.length) {
+            this.overlay.querySelector('.gallery-counter').textContent = 'No photos yet';
+            return;
+        }
+        this.show(0);
+    },
+
+    show(i) {
+        if (!this.photos.length) return;
+        this.index = (i + this.photos.length) % this.photos.length;
+        const photo = this.photos[this.index];
+        const img = this.overlay.querySelector('.gallery-img');
+        img.style.display = 'none';
+        this.overlay.querySelector('.gallery-loading').style.display = 'flex';
+        const loader = new Image();
+        loader.onload = () => {
+            img.src = loader.src;
+            img.style.display = 'block';
+            this.overlay.querySelector('.gallery-loading').style.display = 'none';
+        };
+        loader.onerror = () => {
+            this.overlay.querySelector('.gallery-loading').style.display = 'none';
+        };
+        loader.src = photo.full;
+        this.overlay.querySelector('.gallery-counter').textContent = `${this.index + 1} / ${this.photos.length}`;
+    },
+
+    next() { this.show(this.index + 1); },
+    prev() { this.show(this.index - 1); },
+
+    close() {
+        if (!this.overlay) return;
+        this.overlay.classList.remove('is-open');
+        this.overlay.querySelector('.gallery-img').src = '';
+        document.body.style.overflow = '';
     }
 };
 

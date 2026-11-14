@@ -56,6 +56,11 @@ const EVENTS_HEADERS = [
 // ENTRY POINT
 // ============================================================
 export default {
+  async scheduled(event, env, ctx) {
+    // Cron trigger — send payment reminders to unpaid bookings near expiry
+    ctx.waitUntil(sendReminderEmails(env).catch(e => console.error('Reminder cron error:', e)));
+  },
+
   async fetch(request, env) {
     const requestOrigin = (request.headers.get('origin') || '').replace(/\/$/, '');
     const url      = new URL(request.url);
@@ -163,6 +168,9 @@ async function handleGet(request, env, origin) {
   const statusCol2= header.indexOf('Payment Status');
   if (seatsCol === -1) return corsResponse(JSON.stringify({ bookedSeats: [] }), 200, origin, true);
 
+  // Fire-and-forget cleanup of expired pending rows (non-blocking for response)
+  cleanupExpiredRows(env, token, eventId).catch(() => {});
+
   const bookedSet = new Set();
   const now       = Date.now();
   const EXPIRE_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -173,7 +181,7 @@ async function handleGet(request, env, origin) {
     const rowTs     = tsCol !== -1 ? String(values[i][tsCol] || '').trim() : '';
 
     // Skip expired pending — treat as available
-    if (rowStatus === 'Pending Payment' && rowTs) {
+    if (rowStatus.startsWith('Pending Payment') && rowTs) {
       const created = new Date(rowTs).getTime();
       if (!isNaN(created) && (now - created) > EXPIRE_MS) continue;
     }
@@ -295,7 +303,7 @@ async function handlePost(request, env, origin) {
         const rowStatus = stCol2  !== -1 ? String(values[i][stCol2]  || '').trim() : '';
         const rowTs     = tsCol2  !== -1 ? String(values[i][tsCol2]  || '').trim() : '';
         // Skip expired pending bookings
-        if (rowStatus === 'Pending Payment' && rowTs) {
+        if (rowStatus.startsWith('Pending Payment') && rowTs) {
           const created = new Date(rowTs).getTime();
           if (!isNaN(created) && (nowMs - created) > EXPIRE) continue;
         }
@@ -427,14 +435,17 @@ async function handlePost(request, env, origin) {
     // Non-fatal — booking is saved, admin can resend
   }
 
-  // Generate dynamic PayNow QR string (locked amount + booking ref)
+  // Generate dynamic PayNow QR string (locked amount + seat reference)
   let paynowQR = '';
+  let shortRef = '';
   try {
-    // QR expiry: 24h from now, formatted YYYYMMDD
+    // QR expiry: 24 hours from now, formatted YYYYMMDD — matches the 24h seat hold
     const expDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const expiry = `${expDate.getFullYear()}${String(expDate.getMonth() + 1).padStart(2, '0')}${String(expDate.getDate()).padStart(2, '0')}`;
-    // Booking ref can be long; PayNow reference max ~25 chars. Use a trimmed ref.
-    const shortRef = bookingRef.replace(/[^A-Za-z0-9]/g, '').slice(-20);
+    // Reference = seat numbers, alphanumeric only (PayNow allows max 25 chars, letters+digits)
+    // e.g. ["W46","W47"] → "W46W47". Falls back to booking ref if no seats.
+    const seatRef = seatsToBook.join('').replace(/[^A-Za-z0-9]/g, '').slice(0, 25);
+    shortRef = seatRef || bookingRef.replace(/[^A-Za-z0-9]/g, '').slice(-20);
     paynowQR = buildPayNowQR({
       uen:    env.PAYNOW_UEN || '53384102W',
       amount: totalPayable,
@@ -450,6 +461,7 @@ async function handlePost(request, env, origin) {
     paynow:    true,
     bookingRef,
     paynowQR,
+    paynowRef: shortRef,
     amount:    Number(totalPayable).toFixed(2)
   }), 200, origin);
 }
@@ -1457,6 +1469,168 @@ async function sendTicketEmail(env, token, { to, name, eventTitle, eventDate, ve
 // ============================================================
 // GOOGLE SHEETS HELPERS
 // ============================================================
+// ============================================================
+// PAYMENT REMINDER — sends a follow-up email to unpaid bookings
+// approaching expiry. Called by the scheduled() cron handler.
+// ============================================================
+async function sendReminderEmails(env) {
+  const token = await getAccessToken(env);
+  const sheetMeta = await getSheetMeta(env, token);
+
+  const eventTabs = (sheetMeta.sheets || [])
+    .map(s => s.properties.title)
+    .filter(t => t !== EVENTS_TAB && /^event-/i.test(t));
+
+  const now = Date.now();
+  const EXPIRE_MS   = 24 * 60 * 60 * 1000;       // 24h hold
+  const REMIND_FROM = 18 * 60 * 60 * 1000;       // start reminding at 18h elapsed
+  let sentCount = 0;
+
+  for (const tab of eventTabs) {
+    try {
+      const values = await sheetsRead(env, token, tab, 'A:I');
+      if (!values || values.length <= 1) continue;
+
+      const header    = values[0];
+      const tsCol     = header.indexOf('Timestamp');
+      const nameCol   = header.indexOf('Name');
+      const emailCol  = header.indexOf('Email');
+      const seatsCol  = header.indexOf('Seats');
+      const totalCol  = header.indexOf('Total Payable');
+      const statusCol = header.indexOf('Payment Status');
+      const refCol    = header.indexOf('Booking Ref');
+      if (tsCol === -1 || emailCol === -1 || statusCol === -1) continue;
+
+      // Look up event title from Events tab (best-effort)
+      let eventTitle = tab;
+      try {
+        const evValues = await sheetsRead(env, token, EVENTS_TAB, 'A:M');
+        if (evValues && evValues.length > 1) {
+          const evIdCol    = evValues[0].indexOf('Event ID');
+          const evTitleCol = evValues[0].indexOf('Event Title');
+          const match = evValues.slice(1).find(r => String(r[evIdCol] || '').trim() === tab);
+          if (match && evTitleCol !== -1) eventTitle = String(match[evTitleCol] || tab).trim();
+        }
+      } catch (e) { /* non-fatal */ }
+
+      for (let i = 1; i < values.length; i++) {
+        const status = String(values[i][statusCol] || '').trim();
+        const ts     = String(values[i][tsCol] || '').trim();
+        // Only un-reminded pending rows
+        if (status !== 'Pending Payment' || !ts) continue;
+
+        const created = new Date(ts).getTime();
+        if (isNaN(created)) continue;
+        const elapsed = now - created;
+
+        // In the reminder window: between 18h and 24h elapsed
+        if (elapsed >= REMIND_FROM && elapsed < EXPIRE_MS) {
+          const to = String(values[i][emailCol] || '').trim();
+          if (!to) continue;
+          const name   = nameCol  !== -1 ? String(values[i][nameCol]  || '').trim() : '';
+          const seats  = seatsCol !== -1 ? String(values[i][seatsCol] || '').trim() : '';
+          const total  = totalCol !== -1 ? String(values[i][totalCol] || '').trim() : '';
+          const ref    = refCol   !== -1 ? String(values[i][refCol]   || '').trim() : '';
+          const hoursLeft = Math.max(1, Math.round((EXPIRE_MS - elapsed) / 3600000));
+
+          try {
+            await sendReminderEmail(env, token, { to, name, eventTitle, seats, total, hoursLeft });
+            // Mark as reminded so we don't send again
+            const sheetId = sheetMeta.sheets.find(s => s.properties.title === tab)?.properties.sheetId;
+            const colLetter = columnToLetter(statusCol + 1);
+            const rangeParam = encodeURIComponent(`${tab}!${colLetter}${i + 1}`);
+            await fetch(
+              `https://sheets.googleapis.com/v4/spreadsheets/${env.GOOGLE_SHEET_ID}/values/${rangeParam}?valueInputOption=RAW`,
+              {
+                method: 'PUT',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ values: [['Pending Payment (Reminded)']] })
+              }
+            );
+            sentCount++;
+          } catch (e) {
+            console.error(`Reminder send failed for ${to}:`, e);
+          }
+        }
+      }
+    } catch (e) {
+      console.error(`Reminder scan failed for ${tab}:`, e);
+    }
+  }
+  console.log(`Reminder cron: sent ${sentCount} reminder(s)`);
+  return sentCount;
+}
+
+async function sendReminderEmail(env, token, { to, name, eventTitle, seats, total, hoursLeft }) {
+  const fromEmail = env.FROM_EMAIL;
+  const uen = env.PAYNOW_UEN || '53384102W';
+  const subjectEncoded = `=?UTF-8?B?${btoa(unescape(encodeURIComponent(`Reminder: Complete your payment | ${eventTitle}`)))}?=`;
+
+  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:8px;overflow:hidden;">
+  <tr><td style="background:#0a0a0c;padding:28px 32px;text-align:center;">
+    <div style="font-size:1.4rem;letter-spacing:0.15em;color:#c9a227;font-weight:bold;">LIGHT &amp; SHADOW MEDIA</div>
+    <div style="color:#888;font-size:0.8rem;margin-top:4px;">lightandshadow.media</div>
+  </td></tr>
+  <tr><td style="background:#8a6d1a;padding:20px 32px;text-align:center;">
+    <div style="font-size:1.25rem;color:#fff;font-weight:bold;">&#9203; Payment Reminder</div>
+    <div style="color:#f0e2b6;font-size:0.9rem;margin-top:6px;">Hi <strong style="color:#fff;">${name || 'there'}</strong>, your seats are still being held.</div>
+  </td></tr>
+  <tr><td style="padding:32px;">
+    <p style="font-size:0.95rem;color:#333;line-height:1.6;margin:0 0 18px;">
+      We're holding your seats for <strong>${eventTitle}</strong>, but we haven't received your payment yet.
+      To keep your reservation, please complete payment within about <strong>${hoursLeft} hour(s)</strong> — otherwise the seats will be released.
+    </p>
+    <div style="background:#f7f7f8;border-radius:8px;padding:18px 20px;margin-bottom:18px;">
+      <div style="font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:#c9a227;font-weight:bold;margin-bottom:6px;">Your Booking</div>
+      <div style="font-size:0.95rem;color:#111;margin-bottom:4px;"><strong>Seats:</strong> ${seats}</div>
+      ${total ? `<div style="font-size:0.95rem;color:#111;margin-bottom:4px;"><strong>Amount:</strong> SGD $${total}</div>` : ''}
+    </div>
+    <p style="font-size:0.92rem;color:#333;line-height:1.6;margin:0 0 8px;">
+      <strong>How to pay (PayNow):</strong>
+    </p>
+    <ol style="font-size:0.9rem;color:#444;line-height:1.7;margin:0 0 18px;padding-left:20px;">
+      <li>PayNow to UEN: <strong>${uen}</strong></li>
+      <li>Enter the exact amount${total ? `: <strong>SGD $${total}</strong>` : ''}</li>
+      <li>Put your seats (<strong>${seats}</strong>) in the payment reference</li>
+      <li>Reply to this email with your payment screenshot</li>
+    </ol>
+    <p style="font-size:0.85rem;color:#888;line-height:1.6;margin:0;">
+      Already paid? Please ignore this message — your e-ticket will follow shortly. Questions? Just reply to ${fromEmail}.
+    </p>
+  </td></tr>
+  <tr><td style="background:#0a0a0c;padding:20px 32px;text-align:center;">
+    <div style="color:#666;font-size:0.75rem;">© 2026 Light and Shadow Media</div>
+  </td></tr>
+</table>
+</td></tr></table></body></html>`;
+
+  const rawEmail = [
+    `From: Light and Shadow Media <${fromEmail}>`,
+    `To: ${to}`,
+    `Subject: ${subjectEncoded}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: text/html; charset=UTF-8`,
+    `Content-Transfer-Encoding: base64`,
+    '',
+    btoa(unescape(encodeURIComponent(html)))
+  ].join('\r\n');
+
+  const encoded = btoa(unescape(encodeURIComponent(rawEmail)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+  const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method:  'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ raw: encoded })
+  });
+  if (!res.ok) throw new Error(`Reminder email failed: ${JSON.stringify(await res.json())}`);
+}
+
+
 async function getSheetMeta(env, token) {
   const res = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${env.GOOGLE_SHEET_ID}?fields=sheets.properties.title`,
@@ -1464,6 +1638,75 @@ async function getSheetMeta(env, token) {
   );
   if (!res.ok) throw new Error(`getSheetMeta failed: ${await res.text()}`);
   return res.json();
+}
+
+// Deletes expired "Pending Payment" rows from an event tab.
+// Reads the tab, finds rows older than EXPIRE_MS that are still Pending,
+// and removes them via batchUpdate deleteDimension (bottom-up to keep indices valid).
+async function cleanupExpiredRows(env, token, eventId) {
+  try {
+    const EXPIRE_MS = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    const values = await sheetsRead(env, token, eventId, 'A:I');
+    if (!values || values.length <= 1) return;
+
+    const header   = values[0];
+    const tsCol    = header.indexOf('Timestamp');
+    const statusCol= header.indexOf('Payment Status');
+    if (tsCol === -1 || statusCol === -1) return;
+
+    // Collect 0-based sheet row indices (incl. header offset) of expired pending rows
+    const rowsToDelete = [];
+    for (let i = 1; i < values.length; i++) {
+      const status = String(values[i][statusCol] || '').trim();
+      const ts     = String(values[i][tsCol] || '').trim();
+      if (status.startsWith('Pending Payment') && ts) {
+        const created = new Date(ts).getTime();
+        if (!isNaN(created) && (now - created) > EXPIRE_MS) {
+          rowsToDelete.push(i); // i = sheet row index (0-based, header is row 0)
+        }
+      }
+    }
+    if (rowsToDelete.length === 0) return;
+
+    // Get the numeric sheetId for this tab
+    const metaRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${env.GOOGLE_SHEET_ID}?fields=sheets.properties`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!metaRes.ok) return;
+    const meta = await metaRes.json();
+    const sheet = (meta.sheets || []).find(s => s.properties.title === eventId);
+    if (!sheet) return;
+    const sheetId = sheet.properties.sheetId;
+
+    // Build delete requests bottom-up (highest index first) so indices stay valid
+    const requests = rowsToDelete
+      .sort((a, b) => b - a)
+      .map(rowIdx => ({
+        deleteDimension: {
+          range: {
+            sheetId,
+            dimension: 'ROWS',
+            startIndex: rowIdx,        // 0-based; header is 0, data starts at 1
+            endIndex: rowIdx + 1
+          }
+        }
+      }));
+
+    await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${env.GOOGLE_SHEET_ID}:batchUpdate`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requests })
+      }
+    );
+    console.log(`Cleanup: deleted ${rowsToDelete.length} expired row(s) from ${eventId}`);
+  } catch (e) {
+    console.error('cleanupExpiredRows failed (non-fatal):', e);
+  }
 }
 
 async function createTab(env, token, tabName) {
