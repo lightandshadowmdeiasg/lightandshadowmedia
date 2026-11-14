@@ -72,7 +72,33 @@
     "state": "AVAILABLE"
    },
    "AISLE",
-   "AISLE"
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   "AISLE",
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
   ],
   "CC": [
    {
@@ -131,7 +157,33 @@
     "state": "AVAILABLE"
    },
    "AISLE",
-   "AISLE"
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   "AISLE",
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
   ],
   "DD": [
    {
@@ -190,6 +242,21 @@
     "state": "AVAILABLE"
    },
    "AISLE",
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
    "AISLE",
    {
     "seat": 10,
@@ -240,7 +307,8 @@
     "seat": 1,
     "zone": "SILVER",
     "state": "AVAILABLE"
-   }
+   },
+   null
   ],
   "EE": [
    {
@@ -299,6 +367,21 @@
     "state": "AVAILABLE"
    },
    "AISLE",
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
    "AISLE",
    {
     "seat": 10,
@@ -349,7 +432,8 @@
     "seat": 1,
     "zone": "SILVER",
     "state": "AVAILABLE"
-   }
+   },
+   null
   ],
   "FF": [
    {
@@ -533,7 +617,8 @@
     "seat": 1,
     "zone": "SILVER",
     "state": "AVAILABLE"
-   }
+   },
+   null
   ],
   "GG": [
    {
@@ -1481,6 +1566,7 @@
    }
   ],
   "MM": [
+   null,
    {
     "seat": 35,
     "zone": "SILVER",
@@ -1657,7 +1743,8 @@
     "seat": 1,
     "zone": "SILVER",
     "state": "AVAILABLE"
-   }
+   },
+   null
   ],
   "NN": [
    {
@@ -2230,6 +2317,7 @@
    }
   ],
   "C": [
+   null,
    {
     "seat": 35,
     "zone": "GOLD",
@@ -2406,7 +2494,8 @@
     "seat": 1,
     "zone": "GOLD",
     "state": "AVAILABLE"
-   }
+   },
+   null
   ],
   "D": [
    {
@@ -3165,6 +3254,7 @@
    }
   ],
   "H": [
+   null,
    {
     "seat": 35,
     "zone": "GOLD",
@@ -3341,7 +3431,8 @@
     "seat": 1,
     "zone": "GOLD",
     "state": "AVAILABLE"
-   }
+   },
+   null
   ],
   "J": [
    {
@@ -4103,6 +4194,7 @@
    }
   ],
   "N": [
+   null,
    {
     "seat": 35,
     "zone": "PLATINUM",
@@ -4279,7 +4371,8 @@
     "seat": 1,
     "zone": "PLATINUM",
     "state": "AVAILABLE"
-   }
+   },
+   null
   ],
   "P": [
    {
