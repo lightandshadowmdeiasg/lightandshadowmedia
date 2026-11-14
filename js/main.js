@@ -25,6 +25,12 @@
     if (document.querySelector('.hero-video[data-source]')) {
         HeroVideo.init();
     }
+
+    // Announcement popup — home page only
+    const page = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    if (page === '' || page === 'index.html') {
+        Announcement.init('home');
+    }
 });
 
 /* ============================================
@@ -1212,6 +1218,64 @@ const Gallery = {
         this.closeLightbox();
         this.overlay.classList.remove('is-open');
         document.body.style.overflow = '';
+    }
+};
+
+/* ============================================
+   ANNOUNCEMENT MODULE
+   Home-page popup (loads from /announcement?page=home)
+   ============================================ */
+const Announcement = {
+    apiBase: 'https://api.lightandshadow.media',
+
+    async init(page) {
+        let data;
+        try {
+            const res = await fetch(`${this.apiBase}/announcement?page=${encodeURIComponent(page)}`);
+            const json = await res.json();
+            data = json.announcement;
+        } catch (e) {
+            console.error('Announcement load error:', e);
+            return;
+        }
+        if (!data) return;
+        this.show(data);
+    },
+
+    show(a) {
+        const poster = a.poster ? resolveThumbUrl(a.poster) : '';
+        const links = (a.links || []).map(l =>
+            `<a class="announce-link" href="${l.url}" target="_blank" rel="noopener">${l.label}</a>`
+        ).join('');
+
+        const ov = document.createElement('div');
+        ov.className = 'announce-overlay';
+        ov.innerHTML = `
+            <div class="announce-modal">
+                <button class="announce-close" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+                ${poster ? `<div class="announce-poster"><img src="${poster}" alt="${a.title || ''}" onerror="this.closest('.announce-poster').style.display='none'"></div>` : ''}
+                <div class="announce-body">
+                    ${a.title ? `<h3 class="announce-title">${a.title}</h3>` : ''}
+                    ${a.description ? `<p class="announce-desc">${a.description}</p>` : ''}
+                    ${links ? `<div class="announce-links">${links}</div>` : ''}
+                </div>
+            </div>`;
+        document.body.appendChild(ov);
+        requestAnimationFrame(() => ov.classList.add('is-open'));
+        document.body.style.overflow = 'hidden';
+
+        const close = () => {
+            ov.classList.remove('is-open');
+            document.body.style.overflow = '';
+            setTimeout(() => ov.remove(), 300);
+        };
+        ov.querySelector('.announce-close').addEventListener('click', close);
+        ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
+        document.addEventListener('keydown', function esc(e) {
+            if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
+        });
     }
 };
 
