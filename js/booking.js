@@ -247,25 +247,45 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================================
   // LOAD SEATMAP
   // ==========================================================
+  // Loads the base layout. Priority:
+  //  1. event's named layout  → data/seatmap-<name>.json  (Seatmap column, e.g. "kreta")
+  //  2. per-event file        → data/seatmap-<eventId>.json
+  //  3. shared default        → data/seatmap.json
+  function fetchBaseSeatmap() {
+    const candidates = [];
+    const named = currentEvent && currentEvent.seatmap
+      ? String(currentEvent.seatmap).trim().toLowerCase().replace(/[^a-z0-9_-]/g, '')
+      : '';
+    if (named)   candidates.push(`data/seatmap-${named}.json`);
+    candidates.push(`data/seatmap-${eventId}.json`);
+
+    const tryNext = (i) => {
+      if (i >= candidates.length) return fetch(SEATMAP_SOURCE).then(r => r.json());
+      return fetch(candidates[i])
+        .then(r => { if (!r.ok) throw new Error('miss'); return r.json(); })
+        .catch(() => tryNext(i + 1));
+    };
+    return tryNext(0);
+  }
+
   function loadSeatMap() {
     fetch(`${SEATMAP_WORKER}?eventId=${encodeURIComponent(eventId)}`)
       .then(res => res.json())
       .then(workerData => {
         if (workerData.useDefault) {
-          return fetch(SEATMAP_SOURCE).then(r => r.json()).then(data => {
+          return fetchBaseSeatmap().then(data => {
             seatmap = data;
             loadBookedSeats();
           });
         }
-        return fetch(SEATMAP_SOURCE).then(r => r.json()).then(baseData => {
+        return fetchBaseSeatmap().then(baseData => {
           seatmap = applySeatmapOverrides(baseData, workerData);
           loadBookedSeats();
         });
       })
       .catch(err => {
         console.error('Seatmap load failed, using default:', err);
-        fetch(SEATMAP_SOURCE)
-          .then(res => res.json())
+        fetchBaseSeatmap()
           .then(data => { seatmap = data; loadBookedSeats(); })
           .catch(() => {
             seatGrid.innerHTML = '<tr><td colspan="100"><p style="color:#a0a0a8;">Unable to load seating layout.</p></td></tr>';
