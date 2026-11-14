@@ -300,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (config.overrides && Object.keys(config.overrides).length) {
       Object.keys(result.SEATPLAN).forEach(rowKey => {
-        if (!/^[A-Z]$/.test(rowKey.trim())) return;
+        if (!/^[A-Z]{1,2}$/.test(rowKey.trim())) return;
         result.SEATPLAN[rowKey] = result.SEATPLAN[rowKey].map(cell => {
           if (!cell || cell === 'AISLE') return cell;
           if (typeof cell === 'object' && cell.type)  return cell;
@@ -321,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const plan  = seatmap?.SEATPLAN;
     if (!plan) return codes;
     Object.keys(plan).forEach(rowKey => {
-      if (!/^[A-Z]$/.test(rowKey)) return;
+      if (!/^[A-Z]{1,2}$/.test(rowKey)) return;
       const layout = plan[rowKey];
       if (!Array.isArray(layout)) return;
       layout.forEach(cell => {
@@ -402,16 +402,22 @@ document.addEventListener('DOMContentLoaded', () => {
       seatGrid.appendChild(document.createElement('tr'));
 
       const rowKeys    = Object.keys(section.rows);
-      const letterRows = rowKeys.filter(k => /^[A-Z]$/.test(k)).sort((a, b) => a.localeCompare(b));
-      const specialRows= rowKeys.filter(k => !/^[A-Z]$/.test(k));
-
-      const rowLetters = [];
-      letterRows.forEach(r => {
-        rowLetters.push(r);
-        if (r === 'I' && specialRows.includes(' '))  rowLetters.push(' ');
-        if (r === 'S' && specialRows.includes('  ')) rowLetters.push('  ');
-      });
-      specialRows.forEach(k => { if (!rowLetters.includes(k)) rowLetters.push(k); });
+      let rowLetters;
+      if (seatmap.format === 'tiered') {
+        // Tiered maps (e.g. Kreta Ayer): keep JSON insertion order, allow
+        // multi-letter row keys (BB-NN), render all-null rows (SP1/SP2) as gaps.
+        rowLetters = rowKeys.slice();
+      } else {
+        const letterRows = rowKeys.filter(k => /^[A-Z]$/.test(k)).sort((a, b) => a.localeCompare(b));
+        const specialRows= rowKeys.filter(k => !/^[A-Z]$/.test(k));
+        rowLetters = [];
+        letterRows.forEach(r => {
+          rowLetters.push(r);
+          if (r === 'I' && specialRows.includes(' '))  rowLetters.push(' ');
+          if (r === 'S' && specialRows.includes('  ')) rowLetters.push('  ');
+        });
+        specialRows.forEach(k => { if (!rowLetters.includes(k)) rowLetters.push(k); });
+      }
 
       function isLayoutEmpty(layout) {
         if (!Array.isArray(layout) || layout.length === 0) return true;
